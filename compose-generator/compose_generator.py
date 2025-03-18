@@ -13,6 +13,8 @@ services:
       - LOGGING_LEVEL=DEBUG
     networks:
       - testing_net
+    volumes:
+      - ./server/config.ini:/config.ini
     """
 
     client_template = """
@@ -27,6 +29,8 @@ services:
       - testing_net
     depends_on:
       - server
+    volumes:
+      - ./client/config.yaml:/config.yaml
     """
 
     for i in range(1, number_of_clients + 1):
