@@ -10,9 +10,10 @@ services:
     entrypoint: python3 /main.py
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
     networks:
       - testing_net
+    volumes:
+      - ./server/config.ini:/config.ini
     """
 
     client_template = """
@@ -22,11 +23,12 @@ services:
     entrypoint: /client
     environment:
       - CLI_ID={id}
-      - CLI_LOG_LEVEL=DEBUG
     networks:
       - testing_net
     depends_on:
       - server
+    volumes:
+      - ./client/config.yaml:/config.yaml
     """
 
     for i in range(1, number_of_clients + 1):
