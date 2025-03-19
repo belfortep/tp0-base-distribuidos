@@ -62,12 +62,9 @@ def main():
     try:
         number_of_clients = int(sys.argv[2])
     except ValueError:
-        print("Number of clients must be an integer bigger than 0")
+        print("Number of clients must be a positive integer ")
         sys.exit(-1)
 
-    if number_of_clients <= 0:
-        print("Must have a number of clients bigger than 0") 
-        sys.exit(-1)
     
     create_docker_compose_file(output_filename, number_of_clients)
 
