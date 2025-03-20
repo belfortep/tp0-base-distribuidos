@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/op/go-logging"
@@ -28,9 +31,19 @@ type Client struct {
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
+
 	client := &Client{
 		config: config,
 	}
+	// algo asi supongo? despues lo dejo un poco mejor
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM)
+	go func() {
+		<-sigs
+		close(sigs)
+		client.conn.Close()
+	}()
+
 	return client
 }
 
