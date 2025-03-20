@@ -9,6 +9,8 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._is_running = True
+        self._clients = []
+        self._is_shuting_down = False
 
         signal.signal(signal.SIGTERM, self.__shutdown_server_handler)
 
@@ -27,6 +29,9 @@ class Server:
                     self.__handle_client_connection(client_sock)
             except Exception as exception:
                 logging.error("action: server_run | result: fail | error: {exception}")
+            finally:
+                if not self._is_shuting_down:
+                    self.__shutdown_server_handler(None, None)
             
 
     def __handle_client_connection(self, client_sock):
@@ -40,6 +45,7 @@ class Server:
             # TODO: Modify the receive to avoid short-reads
             msg = client_sock.recv(1024).rstrip().decode('utf-8')
             addr = client_sock.getpeername()
+            self._clients.append(addr)
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes
             client_sock.send("{}\n".format(msg).encode('utf-8'))
@@ -66,4 +72,7 @@ class Server:
     def __shutdown_server_handler(self, signum, frame):
         self._is_running = False
         self._server_socket.close()
+        for client in self._clients:
+            client.close()
+            logging.debug(f"action: shutdown_client | result: success | client: {client}")
     
