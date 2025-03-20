@@ -52,7 +52,7 @@ func (client *Client) shutdownClientHandler() {
 	if client.conn != nil {
 		client.conn.Close()
 	}
-	log.Debugf("action: shutdown_client | result: success | client_id: %v ",
+	log.Infof("action: shutdown_client | result: success | client_id: %v ",
 		client.config.ID,
 	)
 
