@@ -26,9 +26,11 @@ class Server:
         while self.server_is_running:
             try:
                 client_sock = self.__accept_new_connection()
+                if client_sock:
+                    self.__handle_client_connection(client_sock)
             except Exception as exception:
                 print("closing...")
-            self.__handle_client_connection(client_sock)
+            
 
     def __handle_client_connection(self, client_sock):
         """
