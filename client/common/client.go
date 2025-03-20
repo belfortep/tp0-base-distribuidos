@@ -27,7 +27,6 @@ type Client struct {
 	config        ClientConfig
 	conn          net.Conn
 	signalChannel chan os.Signal
-	is_running    bool
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -37,7 +36,6 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config:        config,
 		signalChannel: make(chan os.Signal, 1),
-		is_running:    true,
 	}
 
 	signal.Notify(client.signalChannel, syscall.SIGTERM)
@@ -48,7 +46,6 @@ func NewClient(config ClientConfig) *Client {
 func (client *Client) shutdownClientHandler() {
 	<-client.signalChannel
 	close(client.signalChannel)
-	client.is_running = false
 	if client.conn != nil {
 		client.conn.Close()
 	}
@@ -81,7 +78,7 @@ func (c *Client) StartClientLoop() {
 	go c.shutdownClientHandler()
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount && c.is_running; msgID++ {
+	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
