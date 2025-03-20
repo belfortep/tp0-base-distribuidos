@@ -35,17 +35,25 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
 	}
-	// algo asi supongo? despues lo dejo un poco mejor
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGTERM)
-	go func() {
-		<-sigs
-		close(sigs)
-		client.conn.Close()
-		os.Exit(0)
-	}()
+
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGTERM)
+	go client.shutdownClient(signalChannel)
 
 	return client
+}
+
+func (client *Client) shutdownClient(signalChannel chan os.Signal) {
+	<-signalChannel
+	close(signalChannel)
+	if client.conn != nil {
+		client.conn.Close()
+	}
+	log.Debugf("action: shutdown_client | result: success | client_id: %v ",
+		client.config.ID,
+	)
+
+	os.Exit(0)
 }
 
 // CreateClientSocket Initializes client socket. In case of
