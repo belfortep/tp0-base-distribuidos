@@ -52,6 +52,7 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             self._last_client_socket.close()
+            self._last_client_socket = None
 
     def __accept_new_connection(self):
         """
