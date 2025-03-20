@@ -55,6 +55,8 @@ func (client *Client) shutdownClientHandler() {
 	log.Debugf("action: shutdown_client | result: success | client_id: %v ",
 		client.config.ID,
 	)
+
+	os.Exit(0)
 }
 
 // CreateClientSocket Initializes client socket. In case of
