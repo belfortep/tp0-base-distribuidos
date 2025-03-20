@@ -73,10 +73,10 @@ class Server:
         self._is_shuting_down = True
         if self._server_socket:
             self._server_socket.close()
-            logging.debug("action: shutdown_server | result: success")
+            logging.info("action: shutdown_server | result: success")
         if self._last_client_socket:
             self._last_client_socket.close()
-            logging.debug(f"action: shutdown_client | result: success")
+            logging.info(f"action: shutdown_client | result: success")
         
         logging.info("action: shutdown | result: success")
     
