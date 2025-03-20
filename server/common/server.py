@@ -73,6 +73,10 @@ class Server:
         self._is_running = False
         self._server_socket.close()
         for client in self._clients:
-            client.close()
-            logging.debug(f"action: shutdown_client | result: success | client: {client}")
+            try:
+                client.close()
+            except:
+                logging.warning("action: shutdown_client | result: warning | msg: already_closed")
+            finally:
+                logging.debug(f"action: shutdown_client | result: success | client: {client}")
     
