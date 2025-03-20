@@ -8,6 +8,7 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self.server_is_running = True
 
         signal.signal(signal.SIGTERM, self.__handler)
 
@@ -55,10 +56,12 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
+        if self.server_is_running:
+            c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
     
     def __handler(self, signum, frame):
         self._server_socket.close()
+        self.server_is_running = False
 
