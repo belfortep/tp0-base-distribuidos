@@ -56,8 +56,10 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        if self.server_is_running:
+        try:
             c, addr = self._server_socket.accept()
+        except Exception as exception:
+            print("closing")
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
     
