@@ -76,7 +76,7 @@ class Server:
             try:
                 client.close()
             except:
-                logging.warning("action: shutdown_client | result: warning | msg: already_closed")
+                logging.debug("action: shutdown_client | result: warning | msg: already_closed")
             finally:
                 logging.debug(f"action: shutdown_client | result: success | client: {client}")
     
