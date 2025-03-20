@@ -10,9 +10,8 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self._is_running = True
         self._last_client_socket = None
-        self._is_shuting_down = False
 
-        signal.signal(signal.SIGTERM, self.__shutdown_server_handler)
+        signal.signal(signal.SIGTERM, self.__shutdown_server)
 
     def run(self):
         """
@@ -30,8 +29,7 @@ class Server:
         except Exception as e:
             logging.error("action: server_run | result: fail | error: {e}")
         finally:
-            if not self._is_shuting_down:
-                self.__shutdown_server_handler(None, None)
+            self.__shutdown_server(None, None)
             
 
     def __handle_client_connection(self):
@@ -52,6 +50,7 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             self._last_client_socket.close()
+            self._last_client_socket = None
 
     def __accept_new_connection(self):
         """
@@ -68,14 +67,15 @@ class Server:
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
     
-    def __shutdown_server_handler(self, signum, frame):
+    def __shutdown_server(self, signum, frame):
         self._is_running = False    
-        self._is_shuting_down = True
         if self._server_socket:
             self._server_socket.close()
+            self._server_socket = None
             logging.info("action: shutdown_server | result: success")
         if self._last_client_socket:
             self._last_client_socket.close()
+            self._last_client_socket = None
             logging.info(f"action: shutdown_client | result: success")
         
         logging.info("action: shutdown | result: success")
