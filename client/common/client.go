@@ -38,12 +38,12 @@ func NewClient(config ClientConfig) *Client {
 
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGTERM)
-	go client.shutdownClient(signalChannel)
+	go client.shutdownClientHandler(signalChannel)
 
 	return client
 }
 
-func (client *Client) shutdownClient(signalChannel chan os.Signal) {
+func (client *Client) shutdownClientHandler(signalChannel chan os.Signal) {
 	<-signalChannel
 	close(signalChannel)
 	if client.conn != nil {

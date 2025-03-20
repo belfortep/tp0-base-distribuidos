@@ -8,9 +8,11 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self.server_is_running = True
+        self._is_running = True
+        self._client_sockets = []
+        self._shutdown = False
 
-        signal.signal(signal.SIGTERM, self.__handler)
+        signal.signal(signal.SIGTERM, self.__shutdown_server_handler)
 
     def run(self):
         """
@@ -20,19 +22,19 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
-
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
-        while self.server_is_running:
+        while self._is_running:
             try:
-                client_sock = self.__accept_new_connection()
-                if client_sock:
-                    self.__handle_client_connection(client_sock)
+                client_socket = self.__accept_new_connection()
+                if client_socket:
+                    self.__handle_client_connection(client_socket)
             except Exception as exception:
-                print("closing...")
+                logging.error(f"action: server_exception | result: fail | exception: {exception}")
+            finally:
+                if not self._shutdown:
+                    self.__shutdown_server_handler(None, None)
             
 
-    def __handle_client_connection(self, client_sock):
+    def __handle_client_connection(self, client_socket):
         """
         Read message from a specific client socket and closes the socket
 
@@ -41,15 +43,16 @@ class Server:
         """
         try:
             # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
-            addr = client_sock.getpeername()
+            msg = client_socket.recv(1024).rstrip().decode('utf-8')
+            addr = client_socket.getpeername()
+            self._client_sockets.append(client_socket)
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            client_socket.send("{}\n".format(msg).encode('utf-8'))
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
-            client_sock.close()
+            client_socket.close()
 
     def __accept_new_connection(self):
         """
@@ -66,8 +69,20 @@ class Server:
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
     
-    def __handler(self, signum, frame):
-        self.server_is_running = False
-        self._server_socket.close()
+    def __shutdown_server_handler(self, signum, frame):
+        """
+        Closes the server and the client socket
+        """
+        self._is_running = False
+        self._shutdown = True
+        if self._server_socket:
+            self._server_socket.close()
+            self._server_socket = None
+            logging.debug("action: shutdown_server_socket | result: success")
+        for client_socket in self._client_sockets:
+            client_socket.close()
+            logging.debug(f"action: shutdown_client_socket | result: success | {client_socket}")
+        
+
     
 
