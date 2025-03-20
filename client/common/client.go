@@ -42,6 +42,7 @@ func NewClient(config ClientConfig) *Client {
 		<-sigs
 		close(sigs)
 		client.conn.Close()
+		os.Exit(0)
 	}()
 
 	return client
