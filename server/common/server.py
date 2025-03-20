@@ -71,7 +71,9 @@ class Server:
     def __shutdown_server_handler(self, signum, frame):
         self._is_running = False
         self._is_shuting_down = True
-        self._server_socket.close()
+        if self._server_socket:
+            self._server_socket.close()
+            logging.debug("action: shutdown_server | result: success")
         if self._last_client_socket:
             self._last_client_socket.close()
             logging.debug(f"action: shutdown_client | result: success")
