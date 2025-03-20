@@ -24,7 +24,10 @@ class Server:
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
         while self.server_is_running:
-            client_sock = self.__accept_new_connection()
+            try:
+                client_sock = self.__accept_new_connection()
+            except Exception as exception:
+                print("closing...")
             self.__handle_client_connection(client_sock)
 
     def __handle_client_connection(self, client_sock):
@@ -56,10 +59,8 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        try:
-            c, addr = self._server_socket.accept()
-        except Exception as exception:
-            print("closing")
+        
+        c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
     
