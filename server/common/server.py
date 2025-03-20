@@ -9,7 +9,7 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._is_running = True
-        self._client_socket = None
+        self._last_client_socket = None
         self._is_shuting_down = False
 
         signal.signal(signal.SIGTERM, self.__shutdown_server_handler)
@@ -24,8 +24,8 @@ class Server:
         """
         while self._is_running:
             try:
-                self._client_socket = self.__accept_new_connection()
-                if self._client_socket:
+                self._last_client_socket = self.__accept_new_connection()
+                if self._last_client_socket:
                     self.__handle_client_connection()
             except Exception as exception:
                 logging.error("action: server_run | result: fail | error: {exception}")
@@ -43,16 +43,16 @@ class Server:
         """
         try:
             # TODO: Modify the receive to avoid short-reads
-            msg = self._client_socket.recv(1024).rstrip().decode('utf-8')
-            addr = self._client_socket.getpeername()
+            msg = self._last_client_socket.recv(1024).rstrip().decode('utf-8')
+            addr = self._last_client_socket.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes
-            self._client_socket.send("{}\n".format(msg).encode('utf-8'))
+            self._last_client_socket.send("{}\n".format(msg).encode('utf-8'))
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
-            self._client_socket.close()
-            self._client_socket = None
+            self._last_client_socket.close()
+            self._last_client_socket = None
 
     def __accept_new_connection(self):
         """
@@ -73,7 +73,7 @@ class Server:
         self._is_running = False
         self._is_shuting_down = True
         self._server_socket.close()
-        if self._client_socket:
-            self._client_socket.close()
-            logging.debug(f"action: shutdown_client | result: success | client: {self._client_socket}")
+        if self._last_client_socket:
+            self._last_client_socket.close()
+            logging.debug(f"action: shutdown_client | result: success")
     
