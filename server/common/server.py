@@ -77,4 +77,6 @@ class Server:
         if self._last_client_socket:
             self._last_client_socket.close()
             logging.debug(f"action: shutdown_client | result: success")
+        
+        logging.info("action: shutdown | result: success")
     
