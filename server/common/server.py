@@ -79,9 +79,10 @@ class Server:
             self._server_socket.close()
             self._server_socket = None
             logging.debug("action: shutdown_server_socket | result: success")
+
         for client in self._clients:
             client.close()
-            logging.debug(f"action: shutdown_client | result: success | {client}")
+            logging.debug(f"action: shutdown_client | result: success | {client[0]}")
         
 
     
