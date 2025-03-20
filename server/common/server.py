@@ -23,7 +23,7 @@ class Server:
 
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
-        while True:
+        while self.server_is_running:
             client_sock = self.__accept_new_connection()
             self.__handle_client_connection(client_sock)
 
@@ -62,6 +62,7 @@ class Server:
         return c
     
     def __handler(self, signum, frame):
-        self._server_socket.close()
         self.server_is_running = False
+        self._server_socket.close()
+    
 
