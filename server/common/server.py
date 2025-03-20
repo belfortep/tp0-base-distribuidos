@@ -22,16 +22,16 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
-        while self._is_running:
-            try:
+        try:
+            while self._is_running:
                 self._last_client_socket = self.__accept_new_connection()
                 if self._last_client_socket:
                     self.__handle_client_connection()
-            except Exception as exception:
-                logging.error("action: server_run | result: fail | error: {exception}")
-            finally:
-                if not self._is_shuting_down:
-                    self.__shutdown_server_handler(None, None)
+        except Exception as e:
+            logging.error("action: server_run | result: fail | error: {e}")
+        finally:
+            if not self._is_shuting_down:
+                self.__shutdown_server_handler(None, None)
             
 
     def __handle_client_connection(self):
@@ -69,7 +69,7 @@ class Server:
         return c
     
     def __shutdown_server_handler(self, signum, frame):
-        self._is_running = False
+        self._is_running = False    
         self._is_shuting_down = True
         if self._server_socket:
             self._server_socket.close()
