@@ -61,7 +61,6 @@ class Server:
         data_list = message.split(";")
         if len(data_list) != 6:
             raise Exception("Corrupted message read")
-        logging.info(f"action: reading_bet | result: success | message: bet len is correct")
         
         agency = data_list[0]
         name = data_list[1]
@@ -70,6 +69,8 @@ class Server:
         birthdate = data_list[4]
         number = data_list[5]
         
+        logging.info(f"action: reading_bet | result: success | message: {number} + {agency} + {number.isdigit()} + {agency.isdigit()}")
+
         if not agency.isdigit() or not number.isdigit():
             raise Exception("Wrong data types in number or agency")
         
