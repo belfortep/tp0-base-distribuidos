@@ -19,10 +19,6 @@ func read(connection net.Conn, bufferSize int, messageBuffer []byte) (string, er
 		bytesAlreadyRead += bytesRead
 	}
 
-	log.Infof("action: reading | result: success | message: %v ",
-		string(messageBuffer),
-	)
-
 	return string(messageBuffer[:bytesAlreadyRead]), nil
 }
 
@@ -38,5 +34,6 @@ func send(connection net.Conn, messageToSend string) error {
 
 		bytesAlreadyWritten += bytesWritten
 	}
+
 	return nil
 }

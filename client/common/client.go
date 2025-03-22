@@ -52,6 +52,7 @@ func (client *Client) StartClientLoop() {
 	for msgID := 1; msgID <= client.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		client.createClientSocket()
+
 		bet := GetBet(client.config.ID)
 		err := send(client.conn, bet.serialize())
 
