@@ -10,7 +10,7 @@ import (
 	"github.com/op/go-logging"
 )
 
-const ACK_MESSAGE = "ACK"
+const ACK_MESSAGE = "ACK\000"
 
 var log = logging.MustGetLogger("log")
 
