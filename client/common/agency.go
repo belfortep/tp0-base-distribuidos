@@ -16,11 +16,11 @@ type Bet struct {
 
 func GetBet(agency string) Bet {
 
-	name := os.Getenv("nombre")
-	surname := os.Getenv("apellido")
-	dni := os.Getenv("documento")
-	birthdate := os.Getenv("nacimiento")
-	number := os.Getenv("numero")
+	name := os.Getenv("CLI_NOMBRE")
+	surname := os.Getenv("CLI_APELLIDO")
+	dni := os.Getenv("CLI_DOCUMENTO")
+	birthdate := os.Getenv("CLI_NACIMIENTO")
+	number := os.Getenv("CLI_NUMERO")
 
 	return Bet{
 		agency,

@@ -1,6 +1,8 @@
 import socket
 import logging
 import signal
+from utils import Bet,store_bets
+from connection import send, read_up_to_delimiter
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -40,40 +42,36 @@ class Server:
         client socket will also be closed
         """
         try:
-            message = self.__read_up_to_delimiter(b'\0')
+            bet = self.__read_bet()
+            store_bets([bet])
             addr = self._last_client_socket.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {message}')
-            self.__send("ACK\0")
+            logging.info(f'action: receive_message | result: success | ip: {addr[0]}')
+            send(self._last_client_socket, "ACK\0")
+            logging.info(f'action: sending_message | result: success | ip: {addr[0]}')
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             self._last_client_socket.close()
             self._last_client_socket = None
     
-    def __send(self, message):
-        byte_to_write = len(message)
-        bytes_already_written = 0
-        while bytes_already_written < byte_to_write:
-            bytes_written = self._last_client_socket.send(message[bytes_already_written:].encode('utf-8'))   
-            if bytes_written == 0:
-                raise Exception("Socket is closed")
-            bytes_already_written = bytes_already_written + bytes_written
-    
-    def __read_up_to_delimiter(self, delimiter):
-        buffer = bytearray()
-        fund_delimiter = False
-
-        while not fund_delimiter:
-            chunk = self._last_client_socket.recv(1024)
-            if not chunk:
-                raise Exception("Socket is closed in reading")
-            buffer.extend(chunk)
-
-            if delimiter in chunk:
-                fund_delimiter = True
+    def __read_bet(self):   
+        message = read_up_to_delimiter(self._last_client_socket, b'\0')
+        data_list = message.split(";")
+        if len(data_list) != 5:
+            raise Exception("Corrupted message read")
         
-        return buffer.decode("utf-8").rstrip()
+        agency = data_list[0]
+        name = data_list[1]
+        surname = data_list[2]
+        dni = data_list[3]
+        birthdate = data_list[4]
+        number = data_list[5]
 
+        if not agency.isdigit() or not number.isdigit():
+            raise Exception("Wrong data types in number or agency")
+        
+        return Bet(agency, name, surname, dni, birthdate, number)
+        
     def __accept_new_connection(self):
         """
         Accept new connections
