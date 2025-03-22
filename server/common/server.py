@@ -61,6 +61,7 @@ class Server:
         data_list = message.split(";")
         if len(data_list) != 6:
             raise Exception("Corrupted message read")
+        logging.info(f"action: reading_bet | result: success | message: bet len is correct")
         
         agency = data_list[0]
         name = data_list[1]
@@ -72,7 +73,7 @@ class Server:
         if not agency.isdigit() or not number.isdigit():
             raise Exception("Wrong data types in number or agency")
         
-        logging.info(f"action: reading_bet | result: success | message: bet is ready to be created")
+        
         return Bet(agency, name, surname, dni, birthdate, number)
         
     def __accept_new_connection(self):
