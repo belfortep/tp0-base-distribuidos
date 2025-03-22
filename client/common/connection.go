@@ -1,7 +1,6 @@
 package common
 
 import (
-	"io"
 	"net"
 )
 
@@ -10,9 +9,6 @@ func read(connection net.Conn, bufferSize int, messageBuffer []byte) (string, er
 	for bytesAlreadyRead < bufferSize {
 		bytesRead, err := connection.Read(messageBuffer[bytesAlreadyRead:])
 		if err != nil {
-			if err == io.EOF {
-				break
-			}
 			return "", err
 		}
 
