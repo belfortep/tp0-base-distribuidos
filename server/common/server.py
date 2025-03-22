@@ -44,6 +44,7 @@ class Server:
         try:
             bet = self.__read_bet()
             store_bets([bet])
+            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
             addr = self._last_client_socket.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]}')
             send(self._last_client_socket, "ACK\0")
