@@ -72,7 +72,6 @@ class Server:
         if not agency.isdigit() or not number.isdigit():
             raise Exception("Wrong data types in number or agency")
         
-        
         return Bet(agency, name, surname, dni, birthdate, number)
         
     def __accept_new_connection(self):
