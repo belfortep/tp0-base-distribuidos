@@ -1,4 +1,5 @@
 import sys
+import random
 
 def generate_docker_compose(number_of_clients):
     template = """
@@ -23,6 +24,11 @@ services:
     entrypoint: /client
     environment:
       - CLI_ID={id}
+      - CLI_NOMBRE=LINUS
+      - CLI_APELLIDO=TORVALDS
+      - CLI_DOCUMENTO=12345678
+      - CLI_NACIMIENTO=1969-12-28
+      - CLI_NUMERO={id}
     networks:
       - testing_net
     depends_on:

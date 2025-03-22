@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"github.com/op/go-logging"
 )
 
+const ACK_MESSAGE = "ACK"
+
 var log = logging.MustGetLogger("log")
 
 // ClientConfig Configuration used by the client
@@ -20,11 +21,6 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
-	name          string
-	surname       string
-	dni           int
-	birthdate     time.Time
-	number        int
 }
 
 // Client Entity that encapsulates how
@@ -77,6 +73,49 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
+func (c *Client) SendMessage(messageToWrite string) error {
+	bytesToWrite := len(messageToWrite)
+	bytesAlreadyWritten := 0
+
+	for bytesAlreadyWritten < bytesToWrite {
+		bytesWritten, err := fmt.Fprint(
+			c.conn,
+			messageToWrite,
+		)
+		if err != nil {
+			return err
+		}
+
+		bytesAlreadyWritten += bytesWritten
+	}
+	return nil
+}
+
+func (client *Client) ReadACK() (string, error) {
+	buffer := make([]byte, len(ACK_MESSAGE))
+	message, err := client.Read(len(ACK_MESSAGE), buffer)
+
+	if err != nil {
+		return "", err
+	}
+
+	return message, nil
+}
+
+func (client *Client) Read(bufferSize int, messageBuffer []byte) (string, error) {
+	bytesAlreadyRead := 0
+	for bytesAlreadyRead < bufferSize {
+		bytesRead, err := client.conn.Read(messageBuffer[bytesAlreadyRead:])
+		if err != nil {
+			return "", err
+		}
+
+		bytesAlreadyRead += bytesRead
+	}
+
+	return string(messageBuffer[:bytesAlreadyRead]), nil
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 
@@ -87,15 +126,17 @@ func (c *Client) StartClientLoop() {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
-		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
-			c.config.ID,
-			msgID,
-		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		c.conn.Close()
+		err := c.SendMessage("")
+
+		if err != nil {
+			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
+		}
+		//
+		msg, err := c.ReadACK()
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
@@ -105,11 +146,20 @@ func (c *Client) StartClientLoop() {
 			return
 		}
 
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)
+		if msg == ACK_MESSAGE {
+			log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
+				c.config.ID,
+				msg,
+			)
+		} else {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
+		}
 
+		c.conn.Close()
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
 
