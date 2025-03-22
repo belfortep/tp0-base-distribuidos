@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -44,78 +43,6 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
-func (client *Client) shutdownClientHandler() {
-	<-client.signalChannel
-	close(client.signalChannel)
-	if client.conn != nil {
-		client.conn.Close()
-	}
-	log.Infof("action: shutdown_client | result: success | client_id: %v ",
-		client.config.ID,
-	)
-
-	os.Exit(0)
-}
-
-// CreateClientSocket Initializes client socket. In case of
-// failure, error is printed in stdout/stderr and exit 1
-// is returned
-func (c *Client) createClientSocket() error {
-	conn, err := net.Dial("tcp", c.config.ServerAddress)
-	if err != nil {
-		log.Criticalf(
-			"action: connect | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-	}
-	c.conn = conn
-	return nil
-}
-
-func (c *Client) SendMessage(messageToWrite string) error {
-	bytesToWrite := len(messageToWrite)
-	bytesAlreadyWritten := 0
-
-	for bytesAlreadyWritten < bytesToWrite {
-		bytesWritten, err := fmt.Fprint(
-			c.conn,
-			messageToWrite,
-		)
-		if err != nil {
-			return err
-		}
-
-		bytesAlreadyWritten += bytesWritten
-	}
-	return nil
-}
-
-func (client *Client) ReadACK() (string, error) {
-	buffer := make([]byte, len(ACK_MESSAGE))
-	message, err := client.Read(len(ACK_MESSAGE), buffer)
-
-	if err != nil {
-		return "", err
-	}
-
-	return message, nil
-}
-
-func (client *Client) Read(bufferSize int, messageBuffer []byte) (string, error) {
-	bytesAlreadyRead := 0
-	for bytesAlreadyRead < bufferSize {
-		bytesRead, err := client.conn.Read(messageBuffer[bytesAlreadyRead:])
-		if err != nil {
-			return "", err
-		}
-
-		bytesAlreadyRead += bytesRead
-	}
-
-	return string(messageBuffer[:bytesAlreadyRead]), nil
-}
-
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 
@@ -126,7 +53,7 @@ func (c *Client) StartClientLoop() {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
-		err := c.SendMessage("")
+		err := send(c.conn, "")
 
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
@@ -135,8 +62,8 @@ func (c *Client) StartClientLoop() {
 			)
 			return
 		}
-		//
-		msg, err := c.ReadACK()
+
+		msg, err := c.readACK()
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
@@ -165,4 +92,44 @@ func (c *Client) StartClientLoop() {
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+// CreateClientSocket Initializes client socket. In case of
+// failure, error is printed in stdout/stderr and exit 1
+// is returned
+func (c *Client) createClientSocket() error {
+	conn, err := net.Dial("tcp", c.config.ServerAddress)
+	if err != nil {
+		log.Criticalf(
+			"action: connect | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+	}
+	c.conn = conn
+	return nil
+}
+
+func (client *Client) readACK() (string, error) {
+	buffer := make([]byte, len(ACK_MESSAGE))
+	message, err := read(client.conn, len(ACK_MESSAGE), buffer)
+
+	if err != nil {
+		return "", err
+	}
+
+	return message, nil
+}
+
+func (client *Client) shutdownClientHandler() {
+	<-client.signalChannel
+	close(client.signalChannel)
+	if client.conn != nil {
+		client.conn.Close()
+	}
+	log.Infof("action: shutdown_client | result: success | client_id: %v ",
+		client.config.ID,
+	)
+
+	os.Exit(0)
 }
