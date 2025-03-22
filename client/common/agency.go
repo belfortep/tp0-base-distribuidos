@@ -2,19 +2,27 @@ package common
 
 import (
 	"fmt"
+	"os"
 )
 
 type Bet struct {
-	agency    int
+	agency    string
 	name      string
 	surname   string
-	dni       int
+	dni       string
 	birthdate string
-	number    int
+	number    string
 }
 
-func NewBet(agency int, name string, surname string, dni int, birthdate string, number int) *Bet {
-	bet := &Bet{
+func GetBet(agency string) Bet {
+
+	name := os.Getenv("nombre")
+	surname := os.Getenv("apellido")
+	dni := os.Getenv("documento")
+	birthdate := os.Getenv("nacimiento")
+	number := os.Getenv("numero")
+
+	return Bet{
 		agency,
 		name,
 		surname,
@@ -22,10 +30,8 @@ func NewBet(agency int, name string, surname string, dni int, birthdate string, 
 		birthdate,
 		number,
 	}
-
-	return bet
 }
 
 func (bet *Bet) serialize() string {
-	return fmt.Sprintf("%d;%s;%s;%d;%s;%d\000", bet.agency, bet.name, bet.surname, bet.dni, bet.birthdate, bet.number)
+	return fmt.Sprintf("%s;%s;%s;%s;%s;%s\000", bet.agency, bet.name, bet.surname, bet.dni, bet.birthdate, bet.number)
 }

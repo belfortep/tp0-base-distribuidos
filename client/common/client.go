@@ -52,8 +52,8 @@ func (c *Client) StartClientLoop() {
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
-
-		err := send(c.conn, "")
+		bet := GetBet(c.config.ID)
+		err := send(c.conn, bet.serialize())
 
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
