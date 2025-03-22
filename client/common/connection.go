@@ -1,14 +1,12 @@
 package common
 
 import (
-	"fmt"
 	"io"
 	"net"
 )
 
 func read(connection net.Conn, bufferSize int, messageBuffer []byte) (string, error) {
 	bytesAlreadyRead := 0
-	fmt.Print("READING")
 	for bytesAlreadyRead < bufferSize {
 		bytesRead, err := connection.Read(messageBuffer[bytesAlreadyRead:])
 		if err != nil {
@@ -21,7 +19,9 @@ func read(connection net.Conn, bufferSize int, messageBuffer []byte) (string, er
 		bytesAlreadyRead += bytesRead
 	}
 
-	fmt.Print(string(messageBuffer))
+	log.Infof("action: reading | result: success | message: %v ",
+		string(messageBuffer),
+	)
 
 	return string(messageBuffer[:bytesAlreadyRead]), nil
 }
