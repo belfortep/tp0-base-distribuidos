@@ -44,69 +44,69 @@ func NewClient(config ClientConfig) *Client {
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClientLoop() {
+func (client *Client) StartClientLoop() {
 
-	go c.shutdownClientHandler()
+	go client.shutdownClientHandler()
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+	for msgID := 1; msgID <= client.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
-		bet := GetBet(c.config.ID)
-		err := send(c.conn, bet.serialize())
+		client.createClientSocket()
+		bet := GetBet(client.config.ID)
+		err := send(client.conn, bet.serialize())
 
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
+				client.config.ID,
 				err,
 			)
 			return
 		}
 
-		msg, err := c.readACK()
+		message, err := client.readACK()
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
+				client.config.ID,
 				err,
 			)
 			return
 		}
 
-		if msg == ACK_MESSAGE {
+		if message == ACK_MESSAGE {
 			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
 				bet.dni,
 				bet.number,
 			)
 		} else {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
+				client.config.ID,
 				err,
 			)
 			return
 		}
 
-		c.conn.Close()
+		client.conn.Close()
 		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
+		time.Sleep(client.config.LoopPeriod)
 
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	log.Infof("action: loop_finished | result: success | client_id: %v", client.config.ID)
 }
 
 // CreateClientSocket Initializes client socket. In case of
 // failure, error is printed in stdout/stderr and exit 1
 // is returned
-func (c *Client) createClientSocket() error {
-	conn, err := net.Dial("tcp", c.config.ServerAddress)
+func (client *Client) createClientSocket() error {
+	conn, err := net.Dial("tcp", client.config.ServerAddress)
 	if err != nil {
 		log.Criticalf(
 			"action: connect | result: fail | client_id: %v | error: %v",
-			c.config.ID,
+			client.config.ID,
 			err,
 		)
 	}
-	c.conn = conn
+	client.conn = conn
 	return nil
 }
 

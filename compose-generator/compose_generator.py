@@ -1,7 +1,16 @@
 import sys
-import random
 
 def generate_docker_compose(number_of_clients):
+    
+
+    names = ["ALAN", "DAN", "ADELE"]
+    surnames = ["KAY", "INGALLS", "GOLDBERG"]
+    dnis = ["123", "456", "789"]
+    birthdates = ["1940-05-17", "1944-01-01", "1945-07-07"]
+    numbers = ["7574", "1234", "5678"]
+
+
+
     template = """
 name: tp0
 services:
@@ -24,11 +33,11 @@ services:
     entrypoint: /client
     environment:
       - CLI_ID={id}
-      - CLI_NOMBRE=LINUS
-      - CLI_APELLIDO=TORVALDS
-      - CLI_DOCUMENTO=12345678
-      - CLI_NACIMIENTO=1969-12-28
-      - CLI_NUMERO={id}
+      - CLI_NOMBRE={name}
+      - CLI_APELLIDO={surname}
+      - CLI_DOCUMENTO={dni}
+      - CLI_NACIMIENTO={birthdate}
+      - CLI_NUMERO={number}
     networks:
       - testing_net
     depends_on:
@@ -38,7 +47,7 @@ services:
     """
 
     for i in range(1, number_of_clients + 1):
-        template += client_template.format(id=i)
+        template += client_template.format(id=i, name=names[i-1], surname=surnames[i-1], dni=dnis[i-1], birthdate=birthdates[i-1], number=numbers[i-1])
 
     template += """
 networks:
