@@ -78,13 +78,13 @@ func (client *Client) StartClientLoop() {
 				bet.dni,
 				bet.number,
 			)
-		} else {
+		} /* else {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				client.config.ID,
 				message,
 			)
 			return
-		}
+		}*/
 
 		client.conn.Close()
 		// Wait a time between sending one message and the next one
