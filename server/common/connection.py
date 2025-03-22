@@ -16,4 +16,4 @@ def read_up_to_delimiter(connection, delimiter):
         if delimiter in chunk:
             fund_delimiter = True
         
-    return buffer.decode("utf-8").rstrip()
+    return buffer.decode("utf-8").rstrip(delimiter)

@@ -68,8 +68,6 @@ class Server:
         dni = data_list[3]
         birthdate = data_list[4]
         number = data_list[5]
-        
-        logging.info(f"action: reading_bet | result: success | message: {number} + {agency} + {number.isdigit()} + {agency.isdigit()}")
 
         if not agency.isdigit() or not number.isdigit():
             raise Exception("Wrong data types in number or agency")
