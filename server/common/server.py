@@ -40,17 +40,39 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = self._last_client_socket.recv(1024).rstrip().decode('utf-8')
+            message = self.__read_up_to_delimiter(b'\0')
             addr = self._last_client_socket.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            # TODO: Modify the send to avoid short-writes
-            self._last_client_socket.send("{}\n".format(msg).encode('utf-8'))
+            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {message}')
+            self.__send("ACK\0")
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             self._last_client_socket.close()
             self._last_client_socket = None
+    
+    def __send(self, message):
+        byte_to_write = len(message)
+        bytes_already_written = 0
+        while bytes_already_written < byte_to_write:
+            bytes_written = self._last_client_socket.send(message[bytes_already_written:].encode('utf-8'))   
+            if bytes_written == 0:
+                raise Exception("Socket is closed")
+            bytes_already_written = bytes_already_written + bytes_written
+    
+    def __read_up_to_delimiter(self, delimiter):
+        buffer = bytearray()
+        fund_delimiter = False
+
+        while not fund_delimiter:
+            chunk = self._last_client_socket.recv(1024)
+            if not chunk:
+                raise Exception("Socket is closed in reading")
+            buffer.extend(chunk)
+
+            if delimiter in chunk:
+                fund_delimiter = True
+        
+        return buffer.decode("utf-8").rstrip()
 
     def __accept_new_connection(self):
         """
@@ -62,7 +84,6 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        
         c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c

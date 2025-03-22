@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"net"
 )
 
@@ -24,10 +23,7 @@ func send(connection net.Conn, messageToSend string) error {
 	bytesAlreadyWritten := 0
 
 	for bytesAlreadyWritten < bytesToWrite {
-		bytesWritten, err := fmt.Fprint(
-			connection,
-			messageToSend,
-		)
+		bytesWritten, err := connection.Write([]byte(messageToSend[bytesAlreadyWritten:]))
 		if err != nil {
 			return err
 		}
