@@ -68,10 +68,11 @@ class Server:
         dni = data_list[3]
         birthdate = data_list[4]
         number = data_list[5]
-
+        
         if not agency.isdigit() or not number.isdigit():
             raise Exception("Wrong data types in number or agency")
         
+        logging.info(f"action: reading_bet | result: success | message: bet is ready to be created")
         return Bet(agency, name, surname, dni, birthdate, number)
         
     def __accept_new_connection(self):
