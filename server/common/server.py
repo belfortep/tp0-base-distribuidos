@@ -1,8 +1,8 @@
 import socket
 import logging
 import signal
-from utils import Bet,store_bets
-from connection import send, read_up_to_delimiter
+from common.utils import Bet,store_bets
+from common.connection import send, read_up_to_delimiter
 
 class Server:
     def __init__(self, port, listen_backlog):
