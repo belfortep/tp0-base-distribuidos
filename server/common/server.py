@@ -47,7 +47,7 @@ class Server:
             
             if errors > 0:
                 logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
-                send(self._last_client_socket, "ERR")
+                send(self._last_client_socket, f"ERR {errors}")
             else:
                 logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                 send(self._last_client_socket, "ACK")
