@@ -48,19 +48,6 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
-func (client *Client) openBatchFile() (*bufio.Reader, error) {
-	filepath := fmt.Sprintf("/.data/agency-%v.csv", client.config.ID)
-	file, err := os.Open(filepath)
-	log.Infof("action: open_file | result: success | filepath: %v ",
-		filepath,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return bufio.NewReader(file), nil
-}
-
 func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 	batch := NewBatch(client.config.Batchs)
 
@@ -110,8 +97,8 @@ func (client *Client) StartClientLoop() {
 
 	go client.shutdownClientHandler()
 
-	reader, err := client.openBatchFile()
-
+	filepath := fmt.Sprintf("/.data/agency-%v.csv", client.config.ID)
+	file, err := os.Open(filepath)
 	if err != nil {
 		log.Errorf("action: open_file | result: fail | client_id: %v | error: %v",
 			client.config.ID,
@@ -119,6 +106,9 @@ func (client *Client) StartClientLoop() {
 		)
 		return
 	}
+
+	reader := bufio.NewReader(file)
+	defer file.Close()
 
 	for {
 

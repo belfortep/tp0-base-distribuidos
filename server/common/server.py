@@ -28,8 +28,10 @@ class Server:
                 self._last_client_socket = self.__accept_new_connection()
                 if self._last_client_socket:
                     self.__handle_client_connection()
+        except ConnectionResetError as e:
+            logging.info(f"action: server_run | result: success | message: the socket is now closed")
         except Exception as e:
-            logging.error("action: server_run | result: fail | error: {e}")
+            logging.error(f"action: server_run | result: fail | error: {e}")
         finally:
             self.__shutdown_server(None, None)
             
@@ -52,23 +54,19 @@ class Server:
                 logging.info(f"action: apuesta_recibida  | result: success | cantidad: {len(bets)}")
                 send(self._last_client_socket, "ACK")
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
             self._last_client_socket.close()
             self._last_client_socket = None
     
     def __read_bets(self):   
         message = read_up_to_delimiter(self._last_client_socket, "\0")
-        logging.info(f"action: reading_bets | result: success | message: {message}")
         errors = 0
         bets = []
         for bet_message in message.split("\n"):
-            logging.info(f"action: read_one_bet | result: success | message: {bet_message}")
-
             data_list = bet_message.split(";")
             if len(data_list) != 6:
                 errors += 1
-                logging.error(f"action: apuesta_recibida  | result: fail. tamaño incorrecto")
                 continue
         
             agency = data_list[0]
@@ -80,7 +78,6 @@ class Server:
 
             if not agency.isdigit() or not number.isdigit():
                 errors += 1
-                logging.error(f"action: apuesta_recibida  | result: fail. mal los digitos")
                 continue
 
             bet = Bet(agency, name, surname, dni, birthdate, number)

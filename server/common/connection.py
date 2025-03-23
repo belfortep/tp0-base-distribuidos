@@ -12,7 +12,7 @@ def read_up_to_delimiter(connection, delimiter):
     while not found_delimiter:
         chunk = connection.recv(1024)
         if not chunk:
-            raise Exception("Socket is closed in reading")
+            raise ConnectionResetError("Socket is closed in reading")
         buffer.extend(chunk)
 
         delimiter_index = buffer.find(delimiter)
