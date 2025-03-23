@@ -51,7 +51,9 @@ func NewClient(config ClientConfig) *Client {
 func (client *Client) openBatchFile() (*bufio.Reader, error) {
 	filepath := fmt.Sprintf("/.data/agency-%v.csv", client.config.ID)
 	file, err := os.Open(filepath)
-
+	log.Infof("action: open_file | result: success | filepath: %v ",
+		filepath,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +151,7 @@ func (client *Client) StartClientLoop() {
 		if message == ACK_MESSAGE {
 			log.Infof("action: batch_send | result: success")
 		} else {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+			log.Errorf("action: receive_message | result: fail | client_id: %v | message: %v",
 				client.config.ID,
 				message,
 			)
