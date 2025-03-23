@@ -1,5 +1,5 @@
 def send(connection, message):
-
+    message = message + "\0"
     connection.sendall(message.encode("utf-8"))
 
 
