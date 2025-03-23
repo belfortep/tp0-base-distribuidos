@@ -56,6 +56,7 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 
 		if err == io.EOF {
 			log.Infof("action: EOF | result: success | message: returning the rest of the batch")
+			time.Sleep(client.config.LoopPeriod)
 			return batch, nil
 		}
 
