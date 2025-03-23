@@ -28,8 +28,6 @@ class Server:
                 self._last_client_socket = self.__accept_new_connection()
                 if self._last_client_socket:
                     self.__handle_client_connection()
-        except ConnectionResetError as e:
-            logging.info(f"action: server_run | result: success | message: the socket is now closed")
         except Exception as e:
             logging.error(f"action: server_run | result: fail | error: {e}")
         finally:
@@ -53,6 +51,8 @@ class Server:
             else:
                 logging.info(f"action: apuesta_recibida  | result: success | cantidad: {len(bets)}")
                 send(self._last_client_socket, "ACK")
+        except ConnectionResetError as e:
+            logging.info(f"action: server_run | result: success | message: the socket is now closed")
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
