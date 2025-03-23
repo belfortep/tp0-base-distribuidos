@@ -49,7 +49,7 @@ func NewClient(config ClientConfig) *Client {
 }
 
 func (client *Client) openBatchFile() (*bufio.Reader, error) {
-	filepath := fmt.Sprintf("./.data/agency-%v.csv", client.config.ID)
+	filepath := fmt.Sprintf("/.data/agency-%v.csv", client.config.ID)
 	file, err := os.Open(filepath)
 
 	if err != nil {
