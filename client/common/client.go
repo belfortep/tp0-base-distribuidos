@@ -66,14 +66,22 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 
 	for {
 		line, err := reader.ReadString('\n')
+		log.Infof("action: reading_file | result: success | message: %v ",
+			line,
+		)
+
+		if err == io.EOF {
+			return batch, nil
+		}
 
 		if err != nil {
 			return batch, err
 		}
 
-		betValues := strings.Split(line, ",")
+		betValues := strings.Split(strings.TrimSpace(line), ",")
 
 		if len(betValues) != 5 {
+			log.Infof("action: bet line | result: success | message: corrupted value")
 			continue
 		}
 		bet := Bet{
@@ -85,7 +93,10 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 			number:    betValues[4],
 		}
 
-		if !batch.CanAppend(bet) {
+		if batch.CantAppend(bet) {
+			log.Infof("action: cant_append | result: success | message: %v ",
+				bet.Serialize(),
+			)
 			return batch, nil
 		}
 
@@ -115,17 +126,16 @@ func (client *Client) StartClientLoop() {
 
 		batch, err := client.createBatch(reader)
 
-		if err == io.EOF {
-			send(client.conn, batch.Serialize())
-			break
-		}
-
 		if err != nil {
 			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
 				client.config.ID,
 				err,
 			)
 			return
+		}
+
+		if batch.isEmpty() {
+			break
 		}
 
 		err = send(client.conn, batch.Serialize())
@@ -162,7 +172,6 @@ func (client *Client) StartClientLoop() {
 		// Wait a time between sending one message and the next one
 		time.Sleep(client.config.LoopPeriod)
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", client.config.ID)
 }
 
 // CreateClientSocket Initializes client socket. In case of

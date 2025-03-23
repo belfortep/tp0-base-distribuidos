@@ -46,9 +46,8 @@ class Server:
             store_bets(bets)
             
             if errors > 0:
-                message = f"ERRORS: {errors}"
-                logging.error(f"action: apuesta_recibida  | result: fail  | cantidad: {len(bets)}")
-                send(self._last_client_socket, message)
+                logging.error(f"action: apuesta_con_errores  | result: fail  | errores: {errors}")
+                send(self._last_client_socket, "ERR")
             else:
                 logging.info(f"action: apuesta_recibida  | result: success | cantidad: {len(bets)}")
                 send(self._last_client_socket, "ACK")
@@ -64,9 +63,13 @@ class Server:
         errors = 0
         bets = []
         for bet_message in message.split("\n"):
+            logging.info(f"action: read_one_bet | result: success | message: {bet_message}")
+
             data_list = bet_message.split(";")
             if len(data_list) != 6:
                 errors += 1
+                logging.error(f"action: apuesta_recibida  | result: fail. tamaño incorrecto")
+                continue
         
             agency = data_list[0]
             name = data_list[1]
@@ -77,6 +80,9 @@ class Server:
 
             if not agency.isdigit() or not number.isdigit():
                 errors += 1
+                logging.error(f"action: apuesta_recibida  | result: fail. mal los digitos")
+                continue
+
             bet = Bet(agency, name, surname, dni, birthdate, number)
             bets.append(bet)
         

@@ -25,7 +25,9 @@ func read(connection net.Conn, bufferSize int, messageBuffer []byte) (string, er
 func send(connection net.Conn, messageToSend string) error {
 	bytesToWrite := len(messageToSend)
 	bytesAlreadyWritten := 0
-
+	log.Infof("action: send_message | result: success | message: %v ",
+		messageToSend,
+	)
 	for bytesAlreadyWritten < bytesToWrite {
 		bytesWritten, err := connection.Write([]byte(messageToSend[bytesAlreadyWritten:]))
 		if err != nil {

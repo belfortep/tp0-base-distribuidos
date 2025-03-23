@@ -28,8 +28,8 @@ services:
       - server
     volumes:
       - ./client/config.yaml:/config.yaml
-      - ./.data/agency-1.csv:/.data/agency-1.csv
-
+      - ./.data:/.data
+    
 networks:
   testing_net:
     ipam:

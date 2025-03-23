@@ -1,5 +1,7 @@
 package common
 
+import "strings"
+
 const MAX_MEMORY = 8192
 
 type Batch struct {
@@ -16,12 +18,12 @@ func NewBatch(batchSize int) Batch {
 	}
 }
 
-func (batch *Batch) CanAppend(bet Bet) bool {
+func (batch *Batch) CantAppend(bet Bet) bool {
 	return batch.batchSize-1 < 0 || batch.batchMemory-bet.MemorySize() <= 1
 }
 
 func (batch *Batch) Append(bet Bet) {
-	if !batch.CanAppend(bet) {
+	if batch.CantAppend(bet) {
 		return
 	}
 
@@ -35,7 +37,11 @@ func (batch *Batch) Serialize() string {
 	for _, bet := range batch.bets {
 		serialized += bet.Serialize()
 	}
-	serialized += "\000"
+	serialized = strings.TrimSuffix(serialized, "\n") + "\000"
 
 	return serialized
+}
+
+func (batch *Batch) isEmpty() bool {
+	return len(batch.bets) == 0
 }
