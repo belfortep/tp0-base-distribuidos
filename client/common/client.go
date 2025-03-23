@@ -55,6 +55,7 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 		line, err := reader.ReadString('\n')
 
 		if err == io.EOF {
+			log.Infof("action: EOF | result: success | message: returning the rest of the batch")
 			return batch, nil
 		}
 
@@ -65,7 +66,6 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 		betValues := strings.Split(strings.TrimSpace(line), ",")
 
 		if len(betValues) != 5 {
-			log.Infof("action: bet line | result: success | message: corrupted value")
 			continue
 		}
 		bet := Bet{
