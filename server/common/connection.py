@@ -8,7 +8,7 @@ def read_up_to_delimiter(connection, delimiter):
     fund_delimiter = False
 
     while not fund_delimiter:
-        chunk = connection.recv(1024)
+        chunk = connection.recv(4)
         if not chunk:
             raise Exception("Socket is closed in reading")
         buffer.extend(chunk)
