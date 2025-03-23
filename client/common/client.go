@@ -56,7 +56,6 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 
 		if err == io.EOF {
 			log.Infof("action: EOF | result: success | message: returning the rest of the batch")
-			time.Sleep(client.config.LoopPeriod)
 			return batch, nil
 		}
 
@@ -82,6 +81,7 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 			log.Infof("action: cant_append | result: success | message: %v ",
 				bet.Serialize(),
 			)
+			reader.UnreadByte()
 			return batch, nil
 		}
 
@@ -111,7 +111,6 @@ func (client *Client) StartClientLoop() {
 	for {
 
 		client.createClientSocket()
-
 		batch, err := client.createBatch(reader)
 
 		if err != nil {
