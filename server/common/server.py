@@ -46,10 +46,10 @@ class Server:
             store_bets(bets)
             
             if errors > 0:
-                logging.error(f"action: apuesta_con_errores  | result: fail  | errores: {errors}")
+                logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
                 send(self._last_client_socket, "ERR")
             else:
-                logging.info(f"action: apuesta_recibida  | result: success | cantidad: {len(bets)}")
+                logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                 send(self._last_client_socket, "ACK")
         except ConnectionResetError as e:
             logging.info(f"action: server_run | result: success | message: the socket is now closed")

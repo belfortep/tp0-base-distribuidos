@@ -53,9 +53,6 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 
 	for {
 		line, err := reader.ReadString('\n')
-		log.Infof("action: reading_file | result: success | message: %v ",
-			line,
-		)
 
 		if err == io.EOF {
 			return batch, nil
