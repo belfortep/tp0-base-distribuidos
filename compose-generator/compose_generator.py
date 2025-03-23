@@ -3,11 +3,11 @@ import sys
 def generate_docker_compose(number_of_clients):
     
 
-    names = ["ALAN", "DAN", "ADELE"]
-    surnames = ["KAY", "INGALLS", "GOLDBERG"]
-    dnis = ["123", "456", "789"]
-    birthdates = ["1940-05-17", "1944-01-01", "1945-07-07"]
-    numbers = ["7574", "1234", "5678"]
+    names = ["ALAN", "DAN", "ADELE", "LINUS", "GUIDO"]
+    surnames = ["KAY", "INGALLS", "GOLDBERG", "TORVALDS", "VAN ROSSUM"]
+    dnis = ["123", "456", "789", "012", "345"]
+    birthdates = ["1940-05-17", "1944-01-01", "1945-07-07", "1969-12-28", "1956-01-31"]
+    numbers = ["7574", "1234", "5678", "9012", "3456"]
 
 
 
@@ -44,6 +44,7 @@ services:
       - server
     volumes:
       - ./client/config.yaml:/config.yaml
+      - ./.data/agency-{id}.csv:/agency-{id}.csv
     """
 
     for i in range(1, number_of_clients + 1):

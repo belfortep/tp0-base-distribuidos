@@ -1,9 +1,13 @@
 package common
 
 import (
+	"bufio"
+	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -20,6 +24,7 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	Batchs        int
 }
 
 // Client Entity that encapsulates how
@@ -43,18 +48,85 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
+func (client *Client) openBatchFile() (*bufio.Reader, error) {
+	filepath := fmt.Sprintf("/dataset/agency-%v.csv", client.config.ID)
+	file, err := os.Open(filepath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return bufio.NewReader(file), nil
+}
+
+func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
+	batch := NewBatch(client.config.Batchs)
+
+	for {
+		line, err := reader.ReadString('\n')
+
+		if err != nil {
+			return batch, err
+		}
+
+		betValues := strings.Split(line, ",")
+
+		if len(betValues) != 5 {
+			continue
+		}
+		bet := Bet{
+			agency:    client.config.ID,
+			name:      betValues[0],
+			surname:   betValues[1],
+			dni:       betValues[2],
+			birthdate: betValues[3],
+			number:    betValues[4],
+		}
+
+		if !batch.CanAppend(bet) {
+			return batch, nil
+		}
+
+		batch.Append(bet)
+	}
+
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (client *Client) StartClientLoop() {
 
 	go client.shutdownClientHandler()
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= client.config.LoopAmount; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
+
+	reader, err := client.openBatchFile()
+
+	if err != nil {
+		log.Errorf("action: open_file | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
+	}
+
+	for {
+
 		client.createClientSocket()
 
-		bet := GetBet(client.config.ID)
-		err := send(client.conn, bet.serialize())
+		batch, err := client.createBatch(reader)
+
+		if err == io.EOF {
+			send(client.conn, batch.Serialize())
+			break
+		}
+
+		if err != nil {
+			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return
+		}
+
+		err = send(client.conn, batch.Serialize())
 
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
@@ -75,10 +147,7 @@ func (client *Client) StartClientLoop() {
 		}
 
 		if message == ACK_MESSAGE {
-			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
-				bet.dni,
-				bet.number,
-			)
+			log.Infof("action: batch_send | result: success")
 		} else {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				client.config.ID,
@@ -90,7 +159,6 @@ func (client *Client) StartClientLoop() {
 		client.conn.Close()
 		// Wait a time between sending one message and the next one
 		time.Sleep(client.config.LoopPeriod)
-
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", client.config.ID)
 }
@@ -108,6 +176,10 @@ func (client *Client) createClientSocket() error {
 		)
 	}
 	client.conn = conn
+	return nil
+}
+
+func (client *Client) SendBetsInBatch(file_path string) error {
 	return nil
 }
 
