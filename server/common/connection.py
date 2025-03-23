@@ -6,9 +6,10 @@ def send(connection, message):
 def read_up_to_delimiter(connection, delimiter):
     buffer = bytearray()
     fund_delimiter = False
+    delimiter = delimiter.encode("utf-8")
 
     while not fund_delimiter:
-        chunk = connection.recv(4)
+        chunk = connection.recv(1024)
         if not chunk:
             raise Exception("Socket is closed in reading")
         buffer.extend(chunk)
@@ -16,4 +17,4 @@ def read_up_to_delimiter(connection, delimiter):
         if delimiter in chunk:
             fund_delimiter = True
 
-    return buffer.decode("utf-8")[:-len(delimiter)]
+    return buffer[:-len(delimiter)].decode("utf-8")

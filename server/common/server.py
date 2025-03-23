@@ -53,7 +53,7 @@ class Server:
             self._last_client_socket = None
     
     def __read_bet(self):   
-        message = read_up_to_delimiter(self._last_client_socket, b'\0')
+        message = read_up_to_delimiter(self._last_client_socket, "\0")
         logging.info(f"action: reading_bet | result: success | message: {message}")
         data_list = message.split(";")
         if len(data_list) != 6:
