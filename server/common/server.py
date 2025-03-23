@@ -42,35 +42,48 @@ class Server:
         client socket will also be closed
         """
         try:
-            bet = self.__read_bet()
-            store_bets([bet])
-            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-            send(self._last_client_socket, "ACK")
+            bets, errors = self.__read_bets()
+            store_bets(bets)
+            
+            if errors > 0:
+                message = f"ERRORS: {errors}"
+                logging.error(f"action: apuesta_recibida  | result: fail  | cantidad: {len(bets)}")
+                send(self._last_client_socket, message)
+            else:
+                logging.info(f"action: apuesta_recibida  | result: success | cantidad: {len(bets)}")
+                send(self._last_client_socket, "ACK")
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             self._last_client_socket.close()
             self._last_client_socket = None
     
-    def __read_bet(self):   
+    def __read_bets(self):   
         message = read_up_to_delimiter(self._last_client_socket, "\0")
-        logging.info(f"action: reading_bet | result: success | message: {message}")
-        data_list = message.split(";")
-        if len(data_list) != 6:
-            raise Exception("Corrupted message read")
+        logging.info(f"action: reading_bets | result: success | message: {message}")
+        errors = 0
+        bets = []
+        for bet_message in message.split("\n"):
+            data_list = bet_message.split(";")
+            if len(data_list) != 6:
+                errors += 1
         
-        agency = data_list[0]
-        name = data_list[1]
-        surname = data_list[2]
-        dni = data_list[3]
-        birthdate = data_list[4]
-        number = data_list[5]
+            agency = data_list[0]
+            name = data_list[1]
+            surname = data_list[2]  
+            dni = data_list[3]
+            birthdate = data_list[4]
+            number = data_list[5]
 
-        if not agency.isdigit() or not number.isdigit():
-            raise Exception("Wrong data types in number or agency")
+            if not agency.isdigit() or not number.isdigit():
+                errors += 1
+            bet = Bet(agency, name, surname, dni, birthdate, number)
+            bets.append(bet)
         
-        return Bet(agency, name, surname, dni, birthdate, number)
-        
+        return bets, errors
+    
+
+    
     def __accept_new_connection(self):
         """
         Accept new connections
