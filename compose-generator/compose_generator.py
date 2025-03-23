@@ -44,7 +44,7 @@ services:
       - server
     volumes:
       - ./client/config.yaml:/config.yaml
-      - ./.data/agency-{id}.csv:/agency-{id}.csv
+      - ./.data/agency-{id}.csv:/.data/agency-{id}.csv
     """
 
     for i in range(1, number_of_clients + 1):
