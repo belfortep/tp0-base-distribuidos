@@ -88,6 +88,7 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 		}
 
 		if batch.CantAppend(bet) {
+			client.lastLine = line
 			log.Infof("action: cant_append | result: success | message: %v ",
 				bet.Serialize(),
 			)
