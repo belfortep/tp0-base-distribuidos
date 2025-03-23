@@ -37,7 +37,7 @@ func (batch *Batch) Serialize() string {
 	for _, bet := range batch.bets {
 		serialized += bet.Serialize()
 	}
-	serialized = strings.TrimSuffix(serialized, "\n") + "\000"
+	serialized = strings.TrimSuffix(serialized, "\n")
 
 	return serialized
 }

@@ -145,7 +145,7 @@ func (client *Client) StartClientLoop() {
 			return
 		}
 
-		message, err := client.readACK()
+		message, err := readUpToDelimiter(client.conn, "\000")
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
@@ -169,6 +169,35 @@ func (client *Client) StartClientLoop() {
 		// Wait a time between sending one message and the next one
 		time.Sleep(client.config.LoopPeriod)
 	}
+	client.createClientSocket()
+	winners, err := client.getWinners()
+
+	if err != nil {
+		log.Errorf("action: get_winners | result: fail | client_id: %v",
+			client.config.ID,
+		)
+	}
+
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(winners))
+	client.conn.Close()
+}
+
+func (client *Client) getWinners() ([]string, error) {
+
+	err := send(client.conn, "GETWINNERS")
+
+	if err != nil {
+		return make([]string, 0), err
+	}
+
+	message, err := readUpToDelimiter(client.conn, "\000")
+
+	if err != nil {
+		return make([]string, 0), err
+	}
+
+	return strings.Split(message, ";"), nil
+
 }
 
 // CreateClientSocket Initializes client socket. In case of
@@ -189,17 +218,6 @@ func (client *Client) createClientSocket() error {
 
 func (client *Client) SendBetsInBatch(file_path string) error {
 	return nil
-}
-
-func (client *Client) readACK() (string, error) {
-	buffer := make([]byte, len(ACK_MESSAGE))
-	message, err := read(client.conn, len(ACK_MESSAGE), buffer)
-
-	if err != nil {
-		return "", err
-	}
-
-	return message, nil
 }
 
 func (client *Client) shutdownClientHandler() {
