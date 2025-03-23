@@ -32,6 +32,7 @@ type Client struct {
 	config        ClientConfig
 	conn          net.Conn
 	signalChannel chan os.Signal
+	lastLine      string
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -41,6 +42,7 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config:        config,
 		signalChannel: make(chan os.Signal, 1),
+		lastLine:      "",
 	}
 
 	signal.Notify(client.signalChannel, syscall.SIGTERM)
@@ -52,7 +54,15 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 	batch := NewBatch(client.config.Batchs)
 
 	for {
-		line, err := reader.ReadString('\n')
+		var line string
+		var err error
+
+		if client.lastLine != "" {
+			line = client.lastLine
+			client.lastLine = ""
+		} else {
+			line, err = reader.ReadString('\n')
+		}
 
 		if err == io.EOF {
 			log.Infof("action: EOF | result: success | message: returning the rest of the batch")
@@ -81,7 +91,6 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 			log.Infof("action: cant_append | result: success | message: %v ",
 				bet.Serialize(),
 			)
-			reader.UnreadByte()
 			return batch, nil
 		}
 
