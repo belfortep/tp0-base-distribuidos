@@ -6,6 +6,7 @@ const ACK_MESSAGE = "ACK"
 const NOTYET_MESSAGE = "NOTYET"
 const ERR_MESSAGE = "ERR"
 const WINNERS_MESSAGE = "WINNERS"
+const WRONG_MESSAGE = "WRONG"
 
 type Message interface {
 	ActionForClient()
@@ -16,13 +17,9 @@ func CreateMessage(message string) Message {
 
 	if strings.HasPrefix(message, ACK_MESSAGE) {
 		return &MessageACK{}
-	}
-
-	if strings.HasPrefix(message, NOTYET_MESSAGE) {
+	} else if strings.HasPrefix(message, NOTYET_MESSAGE) {
 		return &MessageNotYet{}
-	}
-
-	if strings.HasPrefix(message, ERR_MESSAGE) {
+	} else if strings.HasPrefix(message, ERR_MESSAGE) {
 		errors := strings.Split(message, ";")
 		if len(errors) != 2 {
 			return nil
@@ -32,17 +29,26 @@ func CreateMessage(message string) Message {
 
 			number_of_errors: number_of_errors,
 		}
-	}
-
-	if strings.HasPrefix(message, WINNERS_MESSAGE) {
+	} else if strings.HasPrefix(message, WINNERS_MESSAGE) {
 		winners := strings.Split(message, ";")
 
 		return &MessageWinners{
 			number_of_winners: len(winners) - 1,
 		}
+	} else {
+		return &MessageWrong{}
 	}
+}
 
-	return nil
+type MessageWrong struct {
+}
+
+func (message *MessageWrong) ActionForClient() {
+	log.Errorf("action: receive_message | result: fail | message: wrong message received")
+}
+
+func (message *MessageWrong) MessageType() string {
+	return WRONG_MESSAGE
 }
 
 type MessageWinners struct {
