@@ -30,6 +30,44 @@ services:
       - ./client/config.yaml:/config.yaml
       - ./.data:/.data
     
+  client2:
+    container_name: client2
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=2
+      - CLI_NOMBRE=DAN
+      - CLI_APELLIDO=INGALLS
+      - CLI_DOCUMENTO=456
+      - CLI_NACIMIENTO=1944-01-01
+      - CLI_NUMERO=1234
+    networks:
+      - testing_net
+    depends_on:
+      - server
+    volumes:
+      - ./client/config.yaml:/config.yaml
+      - ./.data:/.data
+    
+  client3:
+    container_name: client3
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=3
+      - CLI_NOMBRE=ADELE
+      - CLI_APELLIDO=GOLDBERG
+      - CLI_DOCUMENTO=789
+      - CLI_NACIMIENTO=1945-07-07
+      - CLI_NUMERO=5678
+    networks:
+      - testing_net
+    depends_on:
+      - server
+    volumes:
+      - ./client/config.yaml:/config.yaml
+      - ./.data:/.data
+    
 networks:
   testing_net:
     ipam:

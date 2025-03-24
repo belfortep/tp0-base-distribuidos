@@ -1,7 +1,7 @@
 import socket
 import logging
 import signal
-from common.utils import Bet,store_bets
+from common.utils import Bet,store_bets, load_bets, has_won
 from common.connection import send, read_up_to_delimiter
 
 class Server:
@@ -12,6 +12,7 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self._is_running = True
         self._last_client_socket = None
+        self._completed_agencies = []
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
 
@@ -42,15 +43,19 @@ class Server:
         client socket will also be closed
         """
         try:
-            bets, errors = self.__read_bets()
-            store_bets(bets)
-            
-            if errors > 0:
-                logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
-                send(self._last_client_socket, "ERR")
+            message = read_up_to_delimiter(self._last_client_socket, "\0")
+            if message.startswith("GETWINNERS"):
+                self.__get_winners(message)
             else:
-                logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                send(self._last_client_socket, "ACK")
+                bets, errors = self.__get_bets(message)
+                store_bets(bets)
+                
+                if errors > 0:
+                    logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
+                    send(self._last_client_socket, f"ERR {errors}")
+                else:
+                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+                    send(self._last_client_socket, "ACK")
         except ConnectionResetError as e:
             logging.info(f"action: server_run | result: success | message: the socket is now closed")
         except OSError as e:
@@ -59,8 +64,23 @@ class Server:
             self._last_client_socket.close()
             self._last_client_socket = None
     
-    def __read_bets(self):   
-        message = read_up_to_delimiter(self._last_client_socket, "\0")
+    def __get_winners(self, message): 
+        
+        values = message.split(";")
+        self._completed_agencies.append(values[1])
+        message = ""
+        if len(self._completed_agencies) == 5:
+            logging.info(f"action: sorteo | result: success")
+            for bet in load_bets():
+                if has_won(bet):
+                    if bet.agency == values[1]:
+                        message + bet.document + ";"
+            send(self._last_client_socket, message)
+        else:
+            logging.info(f"action: not_yet_winner | result: success")
+            send(self._last_client_socket, "NOTYET")
+
+    def __get_bets(self, message):   
         errors = 0
         bets = []
         for bet_message in message.split("\n"):

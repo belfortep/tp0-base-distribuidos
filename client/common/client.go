@@ -132,6 +132,7 @@ func (client *Client) StartClientLoop() {
 		}
 
 		if batch.isEmpty() {
+			client.conn.Close()
 			break
 		}
 
@@ -169,34 +170,35 @@ func (client *Client) StartClientLoop() {
 		// Wait a time between sending one message and the next one
 		time.Sleep(client.config.LoopPeriod)
 	}
-	client.createClientSocket()
-	winners, err := client.getWinners()
+	for {
+		client.createClientSocket()
+		err := send(client.conn, fmt.Sprintf("GETWINNERS;%v", client.config.ID))
 
-	if err != nil {
-		log.Errorf("action: get_winners | result: fail | client_id: %v",
-			client.config.ID,
-		)
+		if err != nil {
+			log.Errorf("action: get_winners | result: fail | client_id: %v",
+				client.config.ID,
+			)
+			return
+		}
+
+		message, err := readUpToDelimiter(client.conn, "\000")
+
+		if err != nil {
+			log.Errorf("action: get_winners | result: fail | client_id: %v",
+				client.config.ID,
+			)
+			return
+		}
+
+		if strings.HasPrefix(message, "NOTYET") {
+			log.Infof("action: sleeping | result: success")
+			time.Sleep(client.config.LoopPeriod)
+		} else {
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(strings.Split(message, ";")))
+		}
+
+		client.conn.Close()
 	}
-
-	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(winners))
-	client.conn.Close()
-}
-
-func (client *Client) getWinners() ([]string, error) {
-
-	err := send(client.conn, "GETWINNERS")
-
-	if err != nil {
-		return make([]string, 0), err
-	}
-
-	message, err := readUpToDelimiter(client.conn, "\000")
-
-	if err != nil {
-		return make([]string, 0), err
-	}
-
-	return strings.Split(message, ";"), nil
 
 }
 
