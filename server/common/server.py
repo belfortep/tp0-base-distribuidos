@@ -12,7 +12,7 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self._is_running = True
         self._last_client_socket = None
-        self._completed_agencies = []
+        self._completed_agencies = set()
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
 
