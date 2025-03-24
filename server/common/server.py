@@ -5,7 +5,7 @@ from common.utils import Bet,store_bets, load_bets, has_won
 from common.connection import send, read_up_to_delimiter
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, number_of_clients):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
@@ -13,6 +13,7 @@ class Server:
         self._is_running = True
         self._last_client_socket = None
         self._completed_agencies = set()
+        self._number_of_clients = number_of_clients
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
 
@@ -69,7 +70,7 @@ class Server:
         values = message.split(";")
         self._completed_agencies.add(values[1])
         message = ""
-        if len(self._completed_agencies) == 3:
+        if len(self._completed_agencies) == self._number_of_clients:
             logging.info(f"action: sorteo | result: success")
             for bet in load_bets():
                 if has_won(bet):

@@ -11,7 +11,7 @@ def generate_docker_compose(number_of_clients):
 
 
 
-    template = """
+    template = f"""
 name: tp0
 services:
   server:
@@ -20,6 +20,7 @@ services:
     entrypoint: python3 /main.py
     environment:
       - PYTHONUNBUFFERED=1
+      - MAX_CLIENTS={number_of_clients}
     networks:
       - testing_net
     volumes:
