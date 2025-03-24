@@ -68,6 +68,7 @@ class Server:
         
         values = message.split(";")
         self._completed_agencies.append(values[1])
+        logging.info(f"AGENCIAS COMPLETADAS ACTUALMENTE: {len(self._completed_agencies)}")
         message = ""
         if len(self._completed_agencies) == 3:
             logging.info(f"action: sorteo | result: success")
