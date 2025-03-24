@@ -46,7 +46,8 @@ class Server:
         try:
             message = read_up_to_delimiter(self._last_client_socket, "\0")
             if message.startswith("GETWINNERS"):
-                self.__get_winners(message)
+                message = self.__get_winners(message)
+                send(self._last_client_socket, message)
             else:
                 bets, errors = self.__get_bets(message)
                 store_bets(bets)
@@ -77,10 +78,10 @@ class Server:
                     if bet.agency == int(values[1]):
                         message = message + bet.document + ";"
             message = message[:-1]
-            send(self._last_client_socket, message)
+            return message
         else:
             logging.info(f"action: not_yet_winner | result: success")
-            send(self._last_client_socket, "NOTYET")
+            return "NOTYET"
 
     def __get_bets(self, message):   
         errors = 0
@@ -106,8 +107,6 @@ class Server:
             bets.append(bet)
         
         return bets, errors
-    
-
     
     def __accept_new_connection(self):
         """
