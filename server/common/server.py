@@ -41,6 +41,7 @@ class Server:
             
             for process in client_processes:
                 process.join()
+                logging.info(f"action: joining process | result: success")
 
         except Exception as e:
             logging.error(f"action: server_run | result: fail | error: {e}")
@@ -59,7 +60,9 @@ class Server:
             while True:
                 message = read_up_to_delimiter(client_socket, "\0")
                 if message.startswith("GETWINNERS"):
+                    logging.info(f"action: waiting_barrier | result: success")
                     self._barrier.wait()
+                    logging.info(f"action: end in barrier! | result: success")
                     message = self.__get_winners(message)
                     send(client_socket, message)
                 else:
