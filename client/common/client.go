@@ -195,6 +195,7 @@ func (client *Client) StartClientLoop() {
 			time.Sleep(client.config.LoopPeriod)
 		} else {
 			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(strings.Split(message, ";")))
+			return
 		}
 
 		client.conn.Close()
