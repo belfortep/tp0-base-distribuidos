@@ -69,7 +69,7 @@ class Server:
         values = message.split(";")
         self._completed_agencies.append(values[1])
         message = ""
-        if len(self._completed_agencies) == 5:
+        if len(self._completed_agencies) == 3:
             logging.info(f"action: sorteo | result: success")
             for bet in load_bets():
                 if has_won(bet):
