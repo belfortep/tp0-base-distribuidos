@@ -53,7 +53,7 @@ class Server:
                 
                 if errors > 0:
                     logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
-                    send(self._last_client_socket, f"ERR {errors}")
+                    send(self._last_client_socket, f"ERR;{errors}")
                 else:
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                     send(self._last_client_socket, "ACK")
@@ -69,7 +69,7 @@ class Server:
         
         values = message.split(";")
         self._completed_agencies.add(values[1])
-        message = ""
+        message = "WINNERS;"
         if len(self._completed_agencies) == self._number_of_clients:
             logging.info(f"action: sorteo | result: success")
             for bet in load_bets():

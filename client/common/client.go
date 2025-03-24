@@ -14,8 +14,6 @@ import (
 	"github.com/op/go-logging"
 )
 
-const ACK_MESSAGE = "ACK"
-
 var log = logging.MustGetLogger("log")
 
 // ClientConfig Configuration used by the client
@@ -100,6 +98,31 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 
 }
 
+func (client *Client) sendBatch(batch Batch) error {
+	err := send(client.conn, batch.Serialize())
+
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return err
+	}
+
+	message, err := readUpToDelimiter(client.conn, "\000")
+
+	if err != nil {
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return err
+	}
+	message.ActionForClient()
+
+	return nil
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (client *Client) StartClientLoop() {
 
@@ -119,7 +142,6 @@ func (client *Client) StartClientLoop() {
 	defer file.Close()
 
 	for {
-
 		client.createClientSocket()
 		batch, err := client.createBatch(reader)
 
@@ -136,32 +158,12 @@ func (client *Client) StartClientLoop() {
 			break
 		}
 
-		err = send(client.conn, batch.Serialize())
+		err = client.sendBatch(batch)
 
 		if err != nil {
-			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+			log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v",
 				client.config.ID,
 				err,
-			)
-			return
-		}
-
-		message, err := readUpToDelimiter(client.conn, "\000")
-
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		if message == ACK_MESSAGE {
-			log.Infof("action: batch_send | result: success")
-		} else {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | message: %v",
-				client.config.ID,
-				message,
 			)
 			return
 		}
@@ -170,43 +172,50 @@ func (client *Client) StartClientLoop() {
 		// Wait a time between sending one message and the next one
 		time.Sleep(client.config.LoopPeriod)
 	}
+
 	for {
 		client.createClientSocket()
-		err := send(client.conn, fmt.Sprintf("GETWINNERS;%v", client.config.ID))
+		message, err := client.getWinners()
 
 		if err != nil {
-			log.Errorf("action: get_winners | result: fail | client_id: %v",
+			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
 				client.config.ID,
+				err,
 			)
 			return
 		}
 
-		message, err := readUpToDelimiter(client.conn, "\000")
+		message.ActionForClient()
+		time.Sleep(client.config.LoopPeriod)
 
-		if err != nil {
-			log.Errorf("action: get_winners | result: fail | client_id: %v",
-				client.config.ID,
-			)
-			return
-		}
-
-		if strings.HasPrefix(message, "NOTYET") {
-			log.Infof("action: sleeping | result: success")
-			time.Sleep(client.config.LoopPeriod)
-		} else {
-			log.Infof("recibido: %v", message)
-			winners := len(strings.Split(message, ";"))
-			if len(message) == 0 {
-				winners = 0
-			}
-
-			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", winners)
+		if message.MessageType() == WINNERS_MESSAGE {
 			return
 		}
 
 		client.conn.Close()
 	}
 
+}
+
+func (client *Client) getWinners() (Message, error) {
+	err := send(client.conn, fmt.Sprintf("GETWINNERS;%v", client.config.ID))
+
+	if err != nil {
+		log.Errorf("action: get_winners | result: fail | client_id: %v",
+			client.config.ID,
+		)
+		return nil, err
+	}
+
+	message, err := readUpToDelimiter(client.conn, "\000")
+
+	if err != nil {
+		log.Errorf("action: get_winners | result: fail | client_id: %v",
+			client.config.ID,
+		)
+		return nil, err
+	}
+	return message, nil
 }
 
 // CreateClientSocket Initializes client socket. In case of
@@ -222,10 +231,6 @@ func (client *Client) createClientSocket() error {
 		)
 	}
 	client.conn = conn
-	return nil
-}
-
-func (client *Client) SendBetsInBatch(file_path string) error {
 	return nil
 }
 

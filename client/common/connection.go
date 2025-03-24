@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-func readUpToDelimiter(connection net.Conn, delimiter string) (string, error) {
+func readUpToDelimiter(connection net.Conn, delimiter string) (Message, error) {
 
 	buffer := make([]byte, 1024)
 	var result bytes.Buffer
@@ -20,7 +20,7 @@ func readUpToDelimiter(connection net.Conn, delimiter string) (string, error) {
 			if err == io.EOF {
 				break
 			}
-			return "", err
+			return nil, err
 		}
 
 		result.Write(buffer[:bytesRead])
@@ -31,7 +31,8 @@ func readUpToDelimiter(connection net.Conn, delimiter string) (string, error) {
 
 		}
 	}
-	return string(result.Bytes()[:delimiterIndex]), nil
+
+	return CreateMessage(string(result.Bytes()[:delimiterIndex])), nil
 }
 
 func send(connection net.Conn, messageToSend string) error {
