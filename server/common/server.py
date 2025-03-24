@@ -68,14 +68,14 @@ class Server:
         
         values = message.split(";")
         self._completed_agencies.add(values[1])
-        logging.info(f"AGENCIAS COMPLETADAS ACTUALMENTE: {len(self._completed_agencies)}")
         message = ""
         if len(self._completed_agencies) == 3:
             logging.info(f"action: sorteo | result: success")
             for bet in load_bets():
                 if has_won(bet):
-                    if bet.agency == values[1]:
-                        message + bet.document + ";"
+                    if bet.agency == int(values[1]):
+                        message = message + bet.document + ";"
+            message = message[:-1]
             send(self._last_client_socket, message)
         else:
             logging.info(f"action: not_yet_winner | result: success")

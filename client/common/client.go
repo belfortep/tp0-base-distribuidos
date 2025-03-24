@@ -194,6 +194,7 @@ func (client *Client) StartClientLoop() {
 			log.Infof("action: sleeping | result: success")
 			time.Sleep(client.config.LoopPeriod)
 		} else {
+			log.Infof("recibido: %v", message)
 			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(strings.Split(message, ";")))
 			return
 		}
