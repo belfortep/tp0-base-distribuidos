@@ -140,9 +140,10 @@ func (client *Client) StartClientLoop() {
 
 	reader := bufio.NewReader(file)
 	defer file.Close()
+	client.createClientSocket()
+	defer client.conn.Close()
 
 	for {
-		client.createClientSocket()
 		batch, err := client.createBatch(reader)
 
 		if err != nil {
@@ -154,7 +155,6 @@ func (client *Client) StartClientLoop() {
 		}
 
 		if batch.isEmpty() {
-			client.conn.Close()
 			break
 		}
 
@@ -168,13 +168,11 @@ func (client *Client) StartClientLoop() {
 			return
 		}
 
-		client.conn.Close()
 		// Wait a time between sending one message and the next one
 		time.Sleep(client.config.LoopPeriod)
 	}
 
 	for {
-		client.createClientSocket()
 		message, err := client.getWinners()
 
 		if err != nil {
@@ -192,7 +190,6 @@ func (client *Client) StartClientLoop() {
 			return
 		}
 
-		client.conn.Close()
 	}
 
 }

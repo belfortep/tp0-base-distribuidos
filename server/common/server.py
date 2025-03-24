@@ -1,6 +1,7 @@
 import socket
 import logging
 import signal
+from multiprocessing import Process, Barrier, Manager
 from common.utils import Bet,store_bets, load_bets, has_won
 from common.connection import send, read_up_to_delimiter
 
@@ -11,9 +12,11 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._is_running = True
-        self._last_client_socket = None
-        self._completed_agencies = set()
-        self._number_of_clients = number_of_clients
+        self._clients_sockets = []
+        self._barrier = Barrier(number_of_clients)
+        manager = Manager()
+        self._bet_lock = manager.Lock()
+        self._winners_lock = manager.Lock()
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
 
@@ -25,18 +28,27 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
+        client_processes = []
+
         try:
             while self._is_running:
-                self._last_client_socket = self.__accept_new_connection()
-                if self._last_client_socket:
-                    self.__handle_client_connection()
+                client_socket = self.__accept_new_connection()
+                if client_socket:
+                    self._clients_sockets.append(client_socket)
+                    new_process = Process(target=self.__handle_client_connection, args=(client_socket,))
+                    client_processes.append(new_process)
+                    new_process.start()
+            
+            for process in client_processes:
+                process.join()
+
         except Exception as e:
             logging.error(f"action: server_run | result: fail | error: {e}")
         finally:
             self.__shutdown_server(None, None)
             
 
-    def __handle_client_connection(self):
+    def __handle_client_connection(self, client_socket):
         """
         Read message from a specific client socket and closes the socket
 
@@ -44,44 +56,44 @@ class Server:
         client socket will also be closed
         """
         try:
-            message = read_up_to_delimiter(self._last_client_socket, "\0")
-            if message.startswith("GETWINNERS"):
-                message = self.__get_winners(message)
-                send(self._last_client_socket, message)
-            else:
-                bets, errors = self.__get_bets(message)
-                store_bets(bets)
-                
-                if errors > 0:
-                    logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
-                    send(self._last_client_socket, f"ERR;{errors}")
+            while True:
+                message = read_up_to_delimiter(client_socket, "\0")
+                if message.startswith("GETWINNERS"):
+                    self.barrier.wait()
+                    message = self.__get_winners(message)
+                    send(client_socket, message)
                 else:
-                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                    send(self._last_client_socket, "ACK")
+                    bets, errors = self.__get_bets(message)
+                    self._bet_lock.acquire()
+                    store_bets(bets)
+                    self._bet_lock.release()
+                    
+                    if errors > 0:
+                        logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
+                        send(client_socket, f"ERR;{errors}")
+                    else:
+                        logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+                        send(client_socket, "ACK")
         except ConnectionResetError as e:
             logging.info(f"action: server_run | result: success | message: the socket is now closed")
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
-            self._last_client_socket.close()
-            self._last_client_socket = None
+            client_socket.close()
     
     def __get_winners(self, message): 
         
         values = message.split(";")
-        self._completed_agencies.add(values[1])
         message = "WINNERS;"
-        if len(self._completed_agencies) == self._number_of_clients:
-            logging.info(f"action: sorteo | result: success")
-            for bet in load_bets():
-                if has_won(bet):
-                    if bet.agency == int(values[1]):
-                        message = message + bet.document + ";"
-            message = message[:-1]
-            return message
-        else:
-            logging.info(f"action: not_yet_winner | result: success")
-            return "NOTYET"
+        self._winners_lock.acquire()
+        for bet in load_bets():
+            if has_won(bet):
+                if bet.agency == int(values[1]):
+                    message = message + bet.document + ";"
+        self._winners_lock.release()
+        message = message[:-1]
+        logging.info(f"action: sorteo | result: success")
+        return message
 
     def __get_bets(self, message):   
         errors = 0
@@ -128,9 +140,8 @@ class Server:
             self._server_socket.close()
             self._server_socket = None
             logging.info("action: shutdown_server | result: success")
-        if self._last_client_socket:
-            self._last_client_socket.close()
-            self._last_client_socket = None
+        for client_socket in self._clients_sockets:
+            client_socket.close()
             logging.info(f"action: shutdown_client | result: success")
         
         logging.info("action: shutdown | result: success")
