@@ -67,7 +67,7 @@ class Server:
     def __get_winners(self, message): 
         
         values = message.split(";")
-        self._completed_agencies.append(values[1])
+        self._completed_agencies.add(values[1])
         logging.info(f"AGENCIAS COMPLETADAS ACTUALMENTE: {len(self._completed_agencies)}")
         message = ""
         if len(self._completed_agencies) == 3:
