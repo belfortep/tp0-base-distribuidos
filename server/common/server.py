@@ -59,7 +59,7 @@ class Server:
             while True:
                 message = read_up_to_delimiter(client_socket, "\0")
                 if message.startswith("GETWINNERS"):
-                    self.barrier.wait()
+                    self._barrier.wait()
                     message = self.__get_winners(message)
                     send(client_socket, message)
                 else:
