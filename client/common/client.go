@@ -243,6 +243,7 @@ func (client *Client) StartClientLoop() {
 			client.config.ID,
 			err,
 		)
+		return
 	}
 
 	err = client.waitForWinners()
@@ -252,7 +253,12 @@ func (client *Client) StartClientLoop() {
 			client.config.ID,
 			err,
 		)
+		return
 	}
+
+	// Necesario por que si no lo hago, no se printean los ultimos mensajes de los clientes y puede fallar
+	// Notar que no lo utilizo para sincronizar, ya que es al final del loop, cuando ya se enviaron y recibieron todos los mensajes
+	time.Sleep(10 * time.Second)
 
 }
 
