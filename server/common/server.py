@@ -69,8 +69,9 @@ class Server:
     def __get_winners(self, message): 
         
         values = message.split(";")
-        logging.info(f"action: trying to get winners | result: success | agency: {values[1]} | we have already: {len(self._completed_agencies)}")
+        
         self._completed_agencies.add(values[1])
+        logging.info(f"action: trying to get winners | result: success | agency: {values[1]} | we have already: {len(self._completed_agencies)} | expected: {self._number_of_clients}")
         message = "WINNERS;"
         if len(self._completed_agencies) == self._number_of_clients:
             
