@@ -222,6 +222,8 @@ func (client *Client) StartClientLoop() {
 
 	// Necesario por que si no lo hago, no se printean los ultimos mensajes de los clientes y puede fallar
 	// Notar que no lo utilizo para sincronizar, ya que es al final del loop, cuando ya se enviaron y recibieron todos los mensajes
+	os.Stdout.Sync()
+	os.Stderr.Sync()
 	time.Sleep(10 * time.Second)
 
 }
