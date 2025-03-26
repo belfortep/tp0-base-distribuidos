@@ -197,12 +197,10 @@ func (client *Client) waitForWinners() error {
 		}
 
 		message.ActionForClient()
-
+		client.conn.Close()
 		if message.MessageType() == WINNERS_MESSAGE {
-			client.conn.Close()
 			break
 		} else {
-			client.conn.Close()
 			if times_waited >= MAX_WAITS {
 				log.Errorf("action: wait_for_winners | result: fail | client_id: %v",
 					client.config.ID,
@@ -258,7 +256,7 @@ func (client *Client) StartClientLoop() {
 
 	// Necesario por que si no lo hago, no se printean los ultimos mensajes de los clientes y puede fallar
 	// Notar que no lo utilizo para sincronizar, ya que es al final del loop, cuando ya se enviaron y recibieron todos los mensajes
-	time.Sleep(10 * time.Second)
+	time.Sleep(8 * time.Second)
 
 }
 
