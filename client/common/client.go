@@ -197,6 +197,8 @@ func (client *Client) waitForWinners() error {
 		}
 
 		message.ActionForClient()
+		times_waited += 1
+		time.Sleep(client.config.LoopPeriod * time.Duration(1<<times_waited))
 
 		if message.MessageType() == WINNERS_MESSAGE {
 			client.conn.Close()
@@ -209,8 +211,7 @@ func (client *Client) waitForWinners() error {
 				)
 				return err
 			}
-			time.Sleep(client.config.LoopPeriod * time.Duration(1<<times_waited))
-			times_waited += 1
+
 		}
 
 	}
