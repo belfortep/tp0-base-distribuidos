@@ -125,9 +125,10 @@ func (client *Client) sendBatch(batch Batch) error {
 	return nil
 }
 func (client *Client) sendBatches(reader *bufio.Reader) error {
-	batch, err := client.createBatch(reader)
 
 	for client.is_running {
+		batch, err := client.createBatch(reader)
+
 		if err != nil {
 			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
 				client.config.ID,
