@@ -155,7 +155,6 @@ func (client *Client) sendBatches(reader *bufio.Reader) error {
 	return nil
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
 func (client *Client) StartClientLoop() {
 
 	go client.shutdownClientHandler()
@@ -172,29 +171,37 @@ func (client *Client) StartClientLoop() {
 
 	reader := bufio.NewReader(file)
 	defer file.Close()
-	err = client.createClientSocket()
-	if err != nil {
-		log.Criticalf(
-			"action: connect | result: fail | client_id: %v | error: %v",
-			client.config.ID,
-			err,
-		)
-		return
-	}
-
+	client.createClientSocket()
 	defer client.conn.Close()
-	err = client.sendBatches(reader)
 
-	if err != nil {
-		log.Errorf("action: sending_batches | result: fail | client_id: %v | error: %v",
-			client.config.ID,
-			err,
-		)
-		return
+	for {
+		batch, err := client.createBatch(reader)
+
+		if err != nil {
+			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return
+		}
+
+		if batch.isEmpty() {
+			break
+		}
+
+		err = client.sendBatch(batch)
+
+		if err != nil {
+			log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return
+		}
+
 	}
 
-	for client.is_running {
-
+	for {
 		message, err := client.getWinners()
 
 		if err != nil {
@@ -206,6 +213,7 @@ func (client *Client) StartClientLoop() {
 		}
 
 		message.ActionForClient()
+		time.Sleep(client.config.LoopPeriod)
 
 		if message.MessageType() == WINNERS_MESSAGE {
 			break
@@ -216,6 +224,7 @@ func (client *Client) StartClientLoop() {
 	// Necesario por que si no lo hago, no se printean los ultimos mensajes de los clientes y puede fallar
 	// Notar que no lo utilizo para sincronizar, ya que es al final del loop, cuando ya se enviaron y recibieron todos los mensajes
 	time.Sleep(10 * time.Second)
+
 }
 
 func (client *Client) getWinners() (Message, error) {
