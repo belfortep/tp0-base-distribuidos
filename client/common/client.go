@@ -132,7 +132,7 @@ func (client *Client) StartClientLoop() {
 			)
 			return
 		}
-		defer client.conn.Close()
+
 		batch, err := client.createBatch(reader)
 
 		if err != nil {
@@ -140,10 +140,12 @@ func (client *Client) StartClientLoop() {
 				client.config.ID,
 				err,
 			)
+			client.conn.Close()
 			return
 		}
 
 		if batch.isEmpty() {
+			client.conn.Close()
 			break
 		}
 
@@ -154,6 +156,7 @@ func (client *Client) StartClientLoop() {
 				client.config.ID,
 				err,
 			)
+			client.conn.Close()
 			return
 		}
 
@@ -164,9 +167,10 @@ func (client *Client) StartClientLoop() {
 				client.config.ID,
 				err,
 			)
+			client.conn.Close()
 			return
 		}
-
+		client.conn.Close()
 		if message == ACK_MESSAGE {
 			log.Infof("action: batch_send | result: success")
 		} else {
