@@ -74,11 +74,11 @@ class Server:
         logging.info(f"action: trying to get winners | result: success | agency: {values[1]} | we have already: {len(self._completed_agencies)} | expected: {self._number_of_clients}")
         message = "WINNERS;"
         if len(self._completed_agencies) == self._number_of_clients:
-            logging.info(f"action: sorteo | result: success")
             for bet in load_bets():
                 if has_won(bet):
                     if bet.agency == int(values[1]):
                         message = message + bet.document + ";"
+            logging.info(f"action: sorteo | result: success")
             message = message[:-1]
             return message
         else:
