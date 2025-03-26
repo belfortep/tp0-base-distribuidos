@@ -1,7 +1,7 @@
 import socket
 import logging
 import signal
-from multiprocessing import Process, Barrier, Manager
+from multiprocessing import Process, Barrier, Lock
 from common.utils import Bet,store_bets, load_bets, has_won
 from common.connection import send, read_up_to_delimiter
 
@@ -14,9 +14,8 @@ class Server:
         self._is_running = True
         self._clients_sockets = []
         self._barrier = Barrier(number_of_clients)
-        manager = Manager()
-        self._bet_lock = manager.Lock()
-        self._winners_lock = manager.Lock()
+        self._bet_lock = Lock()
+        self._winners_lock = Lock()
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
 

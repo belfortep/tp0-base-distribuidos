@@ -193,7 +193,6 @@ func (client *Client) StartClientLoop() {
 		}
 
 		message.ActionForClient()
-		time.Sleep(client.config.LoopPeriod)
 
 		if message.MessageType() == WINNERS_MESSAGE {
 			break
