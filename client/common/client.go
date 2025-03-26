@@ -33,6 +33,7 @@ type Client struct {
 	conn          net.Conn
 	signalChannel chan os.Signal
 	lastBatchLine string
+	is_running    bool
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -43,6 +44,7 @@ func NewClient(config ClientConfig) *Client {
 		config:        config,
 		signalChannel: make(chan os.Signal, 1),
 		lastBatchLine: "",
+		is_running:    true,
 	}
 
 	signal.Notify(client.signalChannel, syscall.SIGTERM)
@@ -120,7 +122,17 @@ func (client *Client) StartClientLoop() {
 
 	for {
 
-		client.createClientSocket()
+		err := client.createClientSocket()
+
+		if err != nil {
+			log.Criticalf(
+				"action: connect | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return
+		}
+		defer client.conn.Close()
 		batch, err := client.createBatch(reader)
 
 		if err != nil {
@@ -165,9 +177,6 @@ func (client *Client) StartClientLoop() {
 			return
 		}
 
-		client.conn.Close()
-		// Wait a time between sending one message and the next one
-		time.Sleep(client.config.LoopPeriod)
 	}
 }
 
@@ -177,17 +186,9 @@ func (client *Client) StartClientLoop() {
 func (client *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", client.config.ServerAddress)
 	if err != nil {
-		log.Criticalf(
-			"action: connect | result: fail | client_id: %v | error: %v",
-			client.config.ID,
-			err,
-		)
+		return err
 	}
 	client.conn = conn
-	return nil
-}
-
-func (client *Client) SendBetsInBatch(file_path string) error {
 	return nil
 }
 
@@ -197,9 +198,9 @@ func (client *Client) shutdownClientHandler() {
 	if client.conn != nil {
 		client.conn.Close()
 	}
+	client.is_running = false
 	log.Infof("action: shutdown_client | result: success | client_id: %v ",
 		client.config.ID,
 	)
 
-	os.Exit(0)
 }
