@@ -69,14 +69,16 @@ class Server:
     def __get_winners(self, message): 
         
         values = message.split(";")
+        logging.info(f"action: trying to get winners | result: success | agency: {values[1]}")
         self._completed_agencies.add(values[1])
         message = "WINNERS;"
         if len(self._completed_agencies) == self._number_of_clients:
-            logging.info(f"action: sorteo | result: success")
+            
             for bet in load_bets():
                 if has_won(bet):
                     if bet.agency == int(values[1]):
                         message = message + bet.document + ";"
+            logging.info(f"action: sorteo | result: success")
             message = message[:-1]
             return message
         else:
