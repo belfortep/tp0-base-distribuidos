@@ -200,7 +200,7 @@ func (client *Client) StartClientLoop() {
 
 	}
 	// Necesario por que si no lo hago, no se printean los ultimos mensajes de los clientes y puede fallar
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 }
 
 func (client *Client) getWinners() (Message, error) {
