@@ -76,6 +76,7 @@ func (client *Client) StartClientLoop() {
 		}
 
 		message, err := readUpToDelimiter(client.conn, "\000")
+		defer client.conn.Close()
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
@@ -90,6 +91,7 @@ func (client *Client) StartClientLoop() {
 				bet.dni,
 				bet.number,
 			)
+			break
 		} else {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				client.config.ID,
@@ -98,8 +100,6 @@ func (client *Client) StartClientLoop() {
 			return
 		}
 
-		client.conn.Close()
-		time.Sleep(client.config.LoopPeriod)
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", client.config.ID)
 }
