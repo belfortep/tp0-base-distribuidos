@@ -31,6 +31,7 @@ type Client struct {
 	conn          net.Conn
 	signalChannel chan os.Signal
 	lastBatchLine string
+	is_running    bool
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -41,6 +42,7 @@ func NewClient(config ClientConfig) *Client {
 		config:        config,
 		signalChannel: make(chan os.Signal, 1),
 		lastBatchLine: "",
+		is_running:    true,
 	}
 
 	signal.Notify(client.signalChannel, syscall.SIGTERM)
@@ -123,6 +125,58 @@ func (client *Client) sendBatch(batch Batch) error {
 	return nil
 }
 
+func (client *Client) sendBatches(reader *bufio.Reader) error {
+	for client.is_running {
+		batch, err := client.createBatch(reader)
+
+		if err != nil {
+			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return err
+		}
+
+		if batch.isEmpty() {
+			break
+		}
+
+		err = client.sendBatch(batch)
+
+		if err != nil {
+			log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return err
+		}
+	}
+	return nil
+}
+
+func (client *Client) waitForWinners() error {
+	for client.is_running {
+		message, err := client.getWinners()
+
+		if err != nil {
+			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return err
+		}
+
+		message.ActionForClient()
+
+		if message.MessageType() == WINNERS_MESSAGE {
+			break
+		}
+
+	}
+
+	return nil
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (client *Client) StartClientLoop() {
 
@@ -140,56 +194,36 @@ func (client *Client) StartClientLoop() {
 
 	reader := bufio.NewReader(file)
 	defer file.Close()
-	client.createClientSocket()
-	defer client.conn.Close()
+	err = client.createClientSocket()
 
-	for {
-		batch, err := client.createBatch(reader)
-
-		if err != nil {
-			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		if batch.isEmpty() {
-			break
-		}
-
-		err = client.sendBatch(batch)
-
-		if err != nil {
-			log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		// Wait a time between sending one message and the next one
-		time.Sleep(client.config.LoopPeriod)
+	if err != nil {
+		log.Criticalf(
+			"action: connect | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
 	}
 
-	for {
-		message, err := client.getWinners()
+	defer client.conn.Close()
+	err = client.sendBatches(reader)
 
-		if err != nil {
-			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
+	if err != nil {
+		log.Errorf("action: sending_batches | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
+	}
 
-		message.ActionForClient()
-		time.Sleep(client.config.LoopPeriod)
+	err = client.waitForWinners()
 
-		if message.MessageType() == WINNERS_MESSAGE {
-			return
-		}
-
+	if err != nil {
+		log.Errorf("action: waiting_for_winners | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
 	}
 
 }
@@ -221,11 +255,7 @@ func (client *Client) getWinners() (Message, error) {
 func (client *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", client.config.ServerAddress)
 	if err != nil {
-		log.Criticalf(
-			"action: connect | result: fail | client_id: %v | error: %v",
-			client.config.ID,
-			err,
-		)
+		return err
 	}
 	client.conn = conn
 	return nil
@@ -237,9 +267,9 @@ func (client *Client) shutdownClientHandler() {
 	if client.conn != nil {
 		client.conn.Close()
 	}
+	client.is_running = false
 	log.Infof("action: shutdown_client | result: success | client_id: %v ",
 		client.config.ID,
 	)
 
-	os.Exit(0)
 }
