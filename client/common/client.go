@@ -124,8 +124,8 @@ func (client *Client) sendBatch(batch Batch) error {
 
 	return nil
 }
-func (client *Client) sendBatches(reader *bufio.Reader) error {
 
+func (client *Client) sendBatches(reader *bufio.Reader) error {
 	for client.is_running {
 		batch, err := client.createBatch(reader)
 
@@ -151,6 +151,29 @@ func (client *Client) sendBatches(reader *bufio.Reader) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (client *Client) waitForWinners() error {
+
+	for client.is_running {
+		message, err := client.getWinners()
+
+		if err != nil {
+			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return err
+		}
+
+		message.ActionForClient()
+
+		if message.MessageType() == WINNERS_MESSAGE {
+			break
+		}
+
+	}
 
 	return nil
 }
@@ -171,59 +194,39 @@ func (client *Client) StartClientLoop() {
 
 	reader := bufio.NewReader(file)
 	defer file.Close()
-	client.createClientSocket()
-	defer client.conn.Close()
-
-	for {
-		batch, err := client.createBatch(reader)
-
-		if err != nil {
-			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		if batch.isEmpty() {
-			break
-		}
-
-		err = client.sendBatch(batch)
-
-		if err != nil {
-			log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
+	err = client.createClientSocket()
+	if err != nil {
+		log.Criticalf(
+			"action: connect | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
 	}
 
-	for {
-		message, err := client.getWinners()
+	defer client.conn.Close()
+	err = client.sendBatches(reader)
 
-		if err != nil {
-			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
+	if err != nil {
+		log.Errorf("action: sending_batches | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
+	}
 
-		message.ActionForClient()
+	err = client.waitForWinners()
 
-		if message.MessageType() == WINNERS_MESSAGE {
-			break
-		}
-
+	if err != nil {
+		log.Errorf("action: waiting_for_winners | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
 	}
 
 	// Necesario por que si no lo hago, no se printean los ultimos mensajes de los clientes y puede fallar
 	// Notar que no lo utilizo para sincronizar, ya que es al final del loop, cuando ya se enviaron y recibieron todos los mensajes
-	os.Stdout.Sync()
-	os.Stderr.Sync()
 	time.Sleep(10 * time.Second)
 
 }
