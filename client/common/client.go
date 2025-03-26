@@ -16,6 +16,8 @@ import (
 
 var log = logging.MustGetLogger("log")
 
+const MAX_WAITS = 10
+
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
 	ID            string
@@ -31,6 +33,7 @@ type Client struct {
 	conn          net.Conn
 	signalChannel chan os.Signal
 	lastBatchLine string
+	is_running    bool
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -41,6 +44,7 @@ func NewClient(config ClientConfig) *Client {
 		config:        config,
 		signalChannel: make(chan os.Signal, 1),
 		lastBatchLine: "",
+		is_running:    true,
 	}
 
 	signal.Notify(client.signalChannel, syscall.SIGTERM)
@@ -123,6 +127,97 @@ func (client *Client) sendBatch(batch Batch) error {
 	return nil
 }
 
+func (client *Client) sendBatches(reader *bufio.Reader) error {
+	for client.is_running {
+		err := client.createClientSocket()
+
+		if err != nil {
+			log.Criticalf(
+				"action: connect | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return err
+		}
+
+		batch, err := client.createBatch(reader)
+
+		if err != nil {
+			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			client.conn.Close()
+			return err
+		}
+
+		if batch.isEmpty() {
+			client.conn.Close()
+			break
+		}
+
+		err = client.sendBatch(batch)
+
+		if err != nil {
+			log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			client.conn.Close()
+			return err
+		}
+
+		client.conn.Close()
+	}
+	return nil
+}
+
+func (client *Client) waitForWinners() error {
+	times_waited := 1
+	for client.is_running {
+		err := client.createClientSocket()
+		if err != nil {
+			log.Criticalf(
+				"action: connect | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return err
+		}
+
+		message, err := client.getWinners()
+
+		if err != nil {
+			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			client.conn.Close()
+			return err
+		}
+
+		message.ActionForClient()
+
+		if message.MessageType() == WINNERS_MESSAGE {
+			client.conn.Close()
+			break
+		} else {
+			client.conn.Close()
+			if times_waited >= MAX_WAITS {
+				log.Errorf("action: wait_for_winners | result: fail | client_id: %v",
+					client.config.ID,
+				)
+				return err
+			}
+			time.Sleep(client.config.LoopPeriod * time.Duration(1<<times_waited))
+			times_waited += 1
+		}
+
+	}
+
+	return nil
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (client *Client) StartClientLoop() {
 
@@ -141,58 +236,22 @@ func (client *Client) StartClientLoop() {
 	reader := bufio.NewReader(file)
 	defer file.Close()
 
-	for {
-		client.createClientSocket()
-		batch, err := client.createBatch(reader)
+	err = client.sendBatches(reader)
 
-		if err != nil {
-			log.Errorf("action: create_batch | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		if batch.isEmpty() {
-			client.conn.Close()
-			break
-		}
-
-		err = client.sendBatch(batch)
-
-		if err != nil {
-			log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		client.conn.Close()
-		// Wait a time between sending one message and the next one
-		time.Sleep(client.config.LoopPeriod)
+	if err != nil {
+		log.Errorf("action: sending_batches | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
 	}
 
-	for {
-		client.createClientSocket()
-		message, err := client.getWinners()
+	err = client.waitForWinners()
 
-		if err != nil {
-			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		message.ActionForClient()
-		time.Sleep(client.config.LoopPeriod)
-
-		if message.MessageType() == WINNERS_MESSAGE {
-			return
-		}
-
-		client.conn.Close()
+	if err != nil {
+		log.Errorf("action: waiting_for_winners | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
 	}
 
 }
@@ -224,11 +283,7 @@ func (client *Client) getWinners() (Message, error) {
 func (client *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", client.config.ServerAddress)
 	if err != nil {
-		log.Criticalf(
-			"action: connect | result: fail | client_id: %v | error: %v",
-			client.config.ID,
-			err,
-		)
+		return err
 	}
 	client.conn = conn
 	return nil
@@ -240,9 +295,9 @@ func (client *Client) shutdownClientHandler() {
 	if client.conn != nil {
 		client.conn.Close()
 	}
+	client.is_running = false
 	log.Infof("action: shutdown_client | result: success | client_id: %v ",
 		client.config.ID,
 	)
 
-	os.Exit(0)
 }
