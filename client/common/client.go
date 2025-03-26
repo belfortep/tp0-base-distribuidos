@@ -49,59 +49,53 @@ func NewClient(config ClientConfig) *Client {
 func (client *Client) StartClientLoop() {
 
 	go client.shutdownClientHandler()
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= client.config.LoopAmount && client.is_running; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		err := client.createClientSocket()
 
-		if err != nil {
-			log.Criticalf(
-				"action: connect | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
+	err := client.createClientSocket()
 
-		bet := GetBet(client.config.ID)
-		err = send(client.conn, bet.serialize())
-
-		if err != nil {
-			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		message, err := readUpToDelimiter(client.conn, "\000")
-		defer client.conn.Close()
-
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return
-		}
-
-		if message == ACK_MESSAGE {
-			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
-				bet.dni,
-				bet.number,
-			)
-			break
-		} else {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				message,
-			)
-			return
-		}
-
+	if err != nil {
+		log.Criticalf(
+			"action: connect | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", client.config.ID)
+
+	bet := GetBet(client.config.ID)
+	err = send(client.conn, bet.serialize())
+	defer client.conn.Close()
+
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
+	}
+
+	message, err := readUpToDelimiter(client.conn, "\000")
+
+	if err != nil {
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			err,
+		)
+		return
+	}
+
+	if message == ACK_MESSAGE {
+		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
+			bet.dni,
+			bet.number,
+		)
+		client.is_running = false
+	} else {
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+			client.config.ID,
+			message,
+		)
+		return
+	}
 }
 
 // CreateClientSocket Initializes client socket. In case of
