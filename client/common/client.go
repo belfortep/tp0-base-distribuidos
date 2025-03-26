@@ -155,29 +155,6 @@ func (client *Client) sendBatches(reader *bufio.Reader) error {
 	return nil
 }
 
-func (client *Client) waitForWinners() error {
-	for client.is_running {
-		message, err := client.getWinners()
-
-		if err != nil {
-			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
-				client.config.ID,
-				err,
-			)
-			return err
-		}
-
-		message.ActionForClient()
-
-		if message.MessageType() == WINNERS_MESSAGE {
-			break
-		}
-
-	}
-
-	return nil
-}
-
 // StartClientLoop Send messages to the client until some time threshold is met
 func (client *Client) StartClientLoop() {
 
@@ -216,14 +193,24 @@ func (client *Client) StartClientLoop() {
 		return
 	}
 
-	err = client.waitForWinners()
+	for client.is_running {
 
-	if err != nil {
-		log.Errorf("action: waiting_for_winners | result: fail | client_id: %v | error: %v",
-			client.config.ID,
-			err,
-		)
-		return
+		message, err := client.getWinners()
+
+		if err != nil {
+			log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
+				client.config.ID,
+				err,
+			)
+			return
+		}
+
+		message.ActionForClient()
+
+		if message.MessageType() == WINNERS_MESSAGE {
+			break
+		}
+
 	}
 
 	// Necesario por que si no lo hago, no se printean los ultimos mensajes de los clientes y puede fallar
