@@ -82,7 +82,7 @@ class Server:
             message = message[:-1]
             return message
         else:
-            logging.info(f"action: not_yet_winner | result: success")
+            logging.info(f"action: not_yet_winner | result: success | the one who asked is agency: {values[1]}")
             return "NOTYET"
 
     def __get_bets(self, message):   
