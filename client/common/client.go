@@ -99,8 +99,6 @@ func (client *Client) StartClientLoop() {
 		}
 
 		client.conn.Close()
-		// Wait a time between sending one message and the next one
-		time.Sleep(client.config.LoopPeriod)
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", client.config.ID)
