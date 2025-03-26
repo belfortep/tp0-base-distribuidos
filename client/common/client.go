@@ -75,7 +75,7 @@ func (client *Client) StartClientLoop() {
 			return
 		}
 
-		message, err := client.readACK()
+		message, err := readUpToDelimiter(client.conn, "\000")
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
@@ -114,17 +114,6 @@ func (client *Client) createClientSocket() error {
 	}
 	client.conn = conn
 	return nil
-}
-
-func (client *Client) readACK() (string, error) {
-	buffer := make([]byte, len(ACK_MESSAGE))
-	message, err := read(client.conn, len(ACK_MESSAGE), buffer)
-
-	if err != nil {
-		return "", err
-	}
-
-	return message, nil
 }
 
 func (client *Client) shutdownClientHandler() {

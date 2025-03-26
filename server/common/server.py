@@ -13,7 +13,7 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self._is_running = True
         self._last_client_socket = None
-        sys.stdout.reconfigure(line_buffering=False)
+        sys.stdout.reconfigure(line_buffering=True)
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
 

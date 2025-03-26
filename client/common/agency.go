@@ -33,5 +33,5 @@ func GetBet(agency string) Bet {
 }
 
 func (bet *Bet) serialize() string {
-	return fmt.Sprintf("%s;%s;%s;%s;%s;%s\000", bet.agency, bet.name, bet.surname, bet.dni, bet.birthdate, bet.number)
+	return fmt.Sprintf("%s;%s;%s;%s;%s;%s", bet.agency, bet.name, bet.surname, bet.dni, bet.birthdate, bet.number)
 }
