@@ -1,6 +1,7 @@
 import socket
 import logging
 import signal
+import sys
 from common.utils import Bet,store_bets
 from common.connection import send, read_up_to_delimiter
 
@@ -12,6 +13,7 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self._is_running = True
         self._last_client_socket = None
+        sys.stdout.reconfigure(line_buffering=True)
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
 

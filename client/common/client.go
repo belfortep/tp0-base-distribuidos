@@ -51,7 +51,7 @@ func (client *Client) StartClientLoop() {
 	go client.shutdownClientHandler()
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= client.config.LoopAmount; msgID++ {
+	for msgID := 1; msgID <= client.config.LoopAmount && client.is_running; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		err := client.createClientSocket()
 
