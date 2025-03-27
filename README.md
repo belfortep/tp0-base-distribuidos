@@ -178,3 +178,192 @@ Se espera que se redacte una sección del README en donde se indique cómo ejecu
 Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/tp0-tests) de caja negra. Se exige que la resolución de los ejercicios pase tales pruebas, o en su defecto que las discrepancias sean justificadas y discutidas con los docentes antes del día de la entrega. El incumplimiento de las pruebas es condición de desaprobación, pero su cumplimiento no es suficiente para la aprobación. Respetar las entradas de log planteadas en los ejercicios, pues son las que se chequean en cada uno de los tests.
 
 La corrección personal tendrá en cuenta la calidad del código entregado y casos de error posibles, se manifiesten o no durante la ejecución del trabajo práctico. Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+# Informe
+
+## Parte 1
+
+### Ejercicio 1
+
+Se implemento el script `generar-compose.sh`, el cual genera un archivo de docker-compose con la cantidad de clientes especificados por parametro al igual que el
+nombre del archivo de salida. Para ejecutar se debe correr:
+```bash
+./generar-compose.sh <output_file> <number_of_clients>
+```
+
+Notar que si el nombre es distinto a `docker-compose-dev.yaml`, el `Makefile` no funcionara ya que espera un archivo con ese nombre.
+Ademas, si no se envian la cantidad de parametros correctos, o la cantidad de clientes se utiliza texto en vez de un numero, se devolvera un error
+
+### Ejercicio 2
+
+En este nuevo ejercicio, se modifico el archivo de `compose_generator.py`, el cual genera el docker-compose, para que se agreguen los archivos
+de configuración tanto del cliente `config.yaml` como del servidor `config.ini` como volumenes, esto permitiendo que se puedan modificar sin
+tener que reconstruir la imagen. Para verificar que son volumenes como se espera, se pueden ejecutar los containers con `make docker-compose-up`, buscar
+el id del container con `docker ps` y ejecutar `docker exec -it id_de_container cat archivo_configuracion`, modificar desde afuera el archivo, volver
+a ejecutar el `cat` en el container y ver que estan los cambios persistidos
+
+### Ejercicio 3
+
+Se agrego el script `validar-echo-server.sh`, el cual verifica que se envia un mensaje y se espera que se reciba el mismo utilizando `netcat`,
+el modo de ejecución es:
+
+```bash
+./validar-echo-server.sh
+```
+
+Notar que se asume el nombre del container como `server` y que el puerto es `12345`, siendo los mismos valores que se utilizan cuando se genera el
+archivo de docker-compose con el script de `generar-compose.sh`
+
+### Ejercicio 4
+
+A partir de este ejercicio, se empieza a modificar el servidor y el cliente, en este caso se agrego un `graceful shutdown`, esto es que al enviar la señal
+`SIGTERM` se cierran los programas de forma adecuada sin dejar File Descriptors abiertos
+
+Para probar el correcto funcionamiento, se recomienda abrir 2 terminales, en una ejecutar `docker-compose-up` y en otra `docker-compose-logs`, luego
+en la primer terminal que no tiene los logs, ejecutar `docker-compose-down` la cual envia la señal a los containers, y se pueden ver los logs de la terminación.
+
+## Parte 2
+
+En este nuevo apartado, se empieza a cambiar de gran manera tanto el cliente como el servidor, agregando nuevos mensajes un poco mas interesantes que 
+los de un echo server. Ahora, explicare los mensajes que se empezaron a utilizar en esta parte y como es que se envian y reciben.
+
+El protocolo implementando es uno de texto, esto se decidio ya que permitia un facil debugeo de la aplicación, ademas de ser sencillo de implementar.
+Este protocolo, esta basado en delimitadores, por lo que al poder recibir los datos a traves de un `socket`, se va a leer del socket todo lo que se pueda
+hasta encontrar un delimitador, en particular se utilizo `\0`, simplemente por el hecho que es similar a como el lenguaje C maneja el fin de los strings.
+
+Cabe aclarar tambien que se utilizaron `sockets TCP` para poder contar con una comunicación mas sencilla entre los programas en comparación al utilizar `UDP`, ya que priorice la robustez de `TCP` frente a la velocidad pero con posibilidad de perdidas de `UDP`
+
+Los mensajes implementados que van desde el cliente al servidor son los siguientes:
+#### Envio de apuestas
+Se envia `N` cantidad de apuestas con el formato
+
+`agencyNumber;name;surname;dni;birthdate;number`
+
+#### Conseguir ganadores
+Se envia un mensaje para consultar quienes son los ganadores a la loteria nacional, el mensaje es el siguiente
+
+`GETWINNERS`
+
+Por otro lado, los mensajes que van del servidor al cliente son un poco mas variados
+
+#### Recepción de apuestas guardadas
+Al recibir las apuestas del servidor y terminar de guardarlas, se envia
+
+`ACK`
+
+Pero si hubo algun error al recibir las apuestas, se va a enviar
+
+`ERR;cantidad_de_errores`
+
+#### Conseguir ganadores
+Si se consultan las apuestas a la loteria nacional, esta puede responder de 2 maneras:
+
+Si no se tienen aun todas las apuestas de todas las agencias, se enviara el mensaje
+
+`NOTYET`
+
+Por otro lado, si ya todas las agencias terminaron de enviar sus apuestas, el mensaje sera
+
+`WINNERS;DNI_WINNER1;DNI_WINNER2;...;DNI_WINNERn`
+
+### Ejercicio 5
+
+En este punto, se modifico el cliente para que envie una unica apuesta hacia el cliente, esta leyendo el valor de la apuesta a enviar a traves
+de una variable de entorno, esperar el `ACK` del servidor y finalizar el cliente.
+
+Por otro lado, el servidor recibe la apuesta, la intenta guardar y dependiendo el resultado se envia `ACK` o bien si falla, se envia `ERR`
+
+Para ejecutar este punto, se puede utilizar `make docker-compose-up` y luego ver los logs con `make docker-compose-logs`, se deberia poder ver algo como este ejemplo
+
+```bash
+server   | 2025-03-27 13:06:29 INFO     action: reading_bet | result: success | message: 1;ALAN;KAY;123;1940-05-17;7574
+server   | 2025-03-27 13:06:29 INFO     action: apuesta_almacenada | result: success | dni: 123 | numero: 7574
+server   | 2025-03-27 13:06:29 INFO     action: accept_connections | result: in_progress
+client1  | 2025-03-27 13:06:29 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 500 | loop_period: 150ms | log_level: INFO
+client1  | 2025-03-27 13:06:29 INFO     action: apuesta_enviada | result: success | dni: 123 | numero: 7574
+```
+
+Si se quiere ver lo que se guardo en el archivo, es recomendable ejecutar `docker exec -it id_container_server cat bets.csv`
+
+### Ejercicio 6
+
+Se modifico al cliente para que envie multiples apuestas en un formato de batch, modificable esta cantidad a traves de maxAmount en config.yaml, separados por un `\n`. 
+Si el server recibio el batch correctamente este devuelve `ACK`, si hubo algun error, va a devolver `ERR;CANTIDAD_ERRORES`
+y sigue con la ejecucion, guardando la cantidad de bets que fueron parseadas correctamente.
+
+Para ejecutar y verificar, como en ejercicios anteriores, ejecutar `make docker-compose-up` y `docker exec -it id_container_server cat bets.csv` para ver los resultados y `make docker-compose-logs` para ver los logs.
+
+No se envia ningun mensaje particular para indicar la finalización de envio de apuestas, ya que el cliente siempre conecta y reconecta al enviar
+un batch, por lo que no se queda un recurso tomado indefinidamente.
+
+Un ejemplo de resultado al enviar un batch seria el siguiente
+
+```bash
+client2  | 2025-03-27 13:48:53 INFO     action: batch_send | result: success
+client2  | 2025-03-27 13:48:53 INFO     action: cant_append | result: success | message: 2;Brian Nahuel;Farina;37517934;1985-05-10;4572
+client2  |  
+client2  | 2025-03-27 13:48:53 INFO     action: send_message | result: success | message: 2;Sofia Abigail;Salamone;35796644;1999-02-18;8723
+client2  | 2;Joaquin Gabriel;Huarte;38614790;1991-05-01;6372
+client2  | 2;Ludmila Magali;Lorenzo;37662263;2000-07-31;1741
+.
+.
+.
+server   | 2025-03-27 13:48:53 INFO     action: apuesta_recibida | result: success | cantidad: 99
+```
+
+### Ejercicio 7
+
+Ahora nuestro cliente ademas de enviar las apuestas, quiere conocer quien es el ganador de estas. Para esto se envia el mensaje de `GETWINNERS`
+varias veces hasta que el servidor obtiene todas las apuestas de todas las agencias y pueda realizar el sorteo
+
+Cuando un cliente termino, se envia el mensaje de `GETWINNERS` y si el servidor devuelve los resultados, significa que todos los clientes terminaron.
+
+Por otro lado, si se recibe `NOTYET`, el cliente va a cerrar su conexion y va a hacer un sleep, y este sleep va a aumentar exponencialmente cada vez que lo intenta hasta un maximo
+de 10 intentos, que si no logro en estos 10 intentos se asume que hubo algun problema y se cierra el cliente con un error. 
+
+Se decidio tomar este camino ya que
+mantener abierta la conexión durante todo el tiempo, es un gasto de recursos innecesario el mantener todas las conexiones abiertas.
+
+Para ejecutar y verificar, como en ejercicios anteriores, ejecutar `make docker-compose-up` y `docker exec -it id_container_server cat bets.csv` para ver los resultados y `make docker-compose-logs` para ver los logs.
+
+Si se intenta obtener los ganadores y aun no estan todos, se puede ver en los logs lo siguiente
+
+```bash
+server   | 2025-03-27 14:04:20 INFO     action: trying to get winners | result: success | agency: 1 | we have already: 4 | expected: 5
+server   | 2025-03-27 14:04:20 INFO     action: not_yet_winner | result: success | the one who asked is agency: 
+```
+
+Ahora, si estan todas las agencias listas se realiza el sorteo y se imprime por pantalla lo siguiente
+
+```bash
+server   | 2025-03-27 14:04:20 INFO     action: sorteo | result: success
+client1  | 2025-03-27 14:04:20 INFO     action: consulta_ganadores | result: success | cant_ganadores: 1
+```
+
+## Parte 3
+
+Finalmente llegamos a la ultima parte de este tp0. El protocolo sigue utilizandose el mismo que en la parte anterior, lo unico que se agrega
+es un manejo de multiples clientes con multiples procesos
+
+La pregunta sería, por que procesos y no threads? La respuesta esta basada en el link que compartio la catedra en este README, por culpa del `GIL`, descubri que los threads en python no aprovechan al maximo el paralelismo, por lo que los procesos eran la solución adecuada para este problema, ademas que el uso de procesos en python es bastante sencillo.
+
+### Ejercicio 8
+
+En este apartado se empezo a tener el servidor con multiples procesos, generando un nuevo proceso cada vez que se acepta una conexión de un cliente,
+ademas se modifico el cliente para que no conecte y reconecte luego de cada envio de mensaje.
+
+Se modifico el comportamiento del ejercicio anterior, utilizando una `Barrier`, a que todos los procesos lleguen al mensaje de recibir `GETWINNERS` para poder empezar con el sorteo de la loteria nacional, cuando todos los procesos llegan a la `Barrier` se puede ver en el servidor
+
+```bash
+server   | 2025-03-27 14:29:34 INFO     action: end in barrier! | result: success
+server   | 2025-03-27 14:29:34 INFO     action: end in barrier! | result: success
+server   | 2025-03-27 14:29:34 INFO     action: end in barrier! | result: success
+server   | 2025-03-27 14:29:34 INFO     action: end in barrier! | result: success
+server   | 2025-03-27 14:29:34 INFO     action: end in barrier! | result: success
+```
+
+Cuando ya se enviaron los resultados del sorteo, se cierra la conexion con el cliente.
+
+Ademas, para evitar race conditions en el archivo de `bets.csv`, se toma un `Lock` antes de empezar con la escritura
+
+Por otro lado, la ejecución y como ver los logs es igual a como se hace con el ejercicio 7
