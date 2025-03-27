@@ -86,6 +86,7 @@ class Server:
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
+            logging.info(f"action: closing client | result: success ")
             client_socket.close()
     
     def __get_winners(self, message): 
