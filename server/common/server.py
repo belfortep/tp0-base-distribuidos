@@ -19,6 +19,7 @@ class Server:
         self._bet_lock = Lock()
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
+        signal.signal(signal.SIGINT, self.__shutdown_server)
 
     def run(self):
         """
@@ -156,7 +157,10 @@ class Server:
             self._server_socket = None
             logging.info("action: shutdown_server | result: success")
         for client_socket in self._clients_sockets:
-            client_socket.close()
+            try:
+                client_socket.close()
+            except:
+                logging.info(f"action: shutdown_client | result: success | socket already closed")
             logging.info(f"action: shutdown_client | result: success")
         
         logging.info("action: shutdown | result: success")
