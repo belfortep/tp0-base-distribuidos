@@ -36,7 +36,8 @@ class Server:
                 client_socket = self.__accept_new_connection()
                 if client_socket:
                     self._clients_sockets.append(client_socket)
-                    new_process = Process(target=self.__handle_client_connection, args=(client_socket,))
+                    
+                    new_process = Process(target=self.__handle_client_connection, args=(client_socket, ))
                     client_processes.append(new_process)
                     new_process.start()
             
@@ -57,8 +58,9 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
+        is_client_running = True
         try:
-            while True:
+            while is_client_running:
                 message = read_up_to_delimiter(client_socket, "\0")
                 if message.startswith("GETWINNERS"):
                     logging.info(f"action: waiting_barrier | result: success")
@@ -66,6 +68,7 @@ class Server:
                     logging.info(f"action: end in barrier! | result: success")
                     message = self.__get_winners(message)
                     send(client_socket, message)
+                    is_client_running = False
                 else:
                     bets, errors = self.__get_bets(message)
                     self._bet_lock.acquire()
