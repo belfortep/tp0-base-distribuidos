@@ -68,6 +68,9 @@ class Server:
         return c
     
     def __shutdown_server(self, signum, frame):
+        """
+        Gracefully shutdown the server and the client connections
+        """
         self._is_running = False    
         if self._server_socket:
             self._server_socket.close()

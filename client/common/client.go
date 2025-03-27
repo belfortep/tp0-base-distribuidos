@@ -45,6 +45,7 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
+// Gracefully shutdown the client
 func (client *Client) shutdownClientHandler() {
 	<-client.signalChannel
 	close(client.signalChannel)
