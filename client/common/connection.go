@@ -6,6 +6,8 @@ import (
 	"net"
 )
 
+// Read up to the delimiter, this function doesn't have short-reads
+// Returns a Message object with the logic depending of the message received
 func readUpToDelimiter(connection net.Conn, delimiter string) (string, error) {
 
 	buffer := make([]byte, 1024)
@@ -34,6 +36,7 @@ func readUpToDelimiter(connection net.Conn, delimiter string) (string, error) {
 	return string(result.Bytes()[:delimiterIndex]), nil
 }
 
+// Send a message without short-writes with a \0 at the end
 func send(connection net.Conn, messageToSend string) error {
 	messageToSend += "\000"
 	bytesToWrite := len(messageToSend)

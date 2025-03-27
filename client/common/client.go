@@ -52,6 +52,7 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
+// Create a new batch from the lines of the reader file
 func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 	batch := NewBatch(client.config.Batchs)
 
@@ -102,7 +103,7 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
+// Start the main client loop, sending and receiving
 func (client *Client) StartClientLoop() {
 
 	go client.shutdownClientHandler()
@@ -196,6 +197,7 @@ func (client *Client) createClientSocket() error {
 	return nil
 }
 
+// Gracefully shutdown the client
 func (client *Client) shutdownClientHandler() {
 	<-client.signalChannel
 	close(client.signalChannel)
