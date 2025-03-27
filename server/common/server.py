@@ -14,6 +14,7 @@ class Server:
         self._is_running = True
         self._clients_sockets = []
         self._barrier = Barrier(number_of_clients)
+        self._number_of_clients = number_of_clients
         
         
         self._bet_lock = Lock()
@@ -30,13 +31,13 @@ class Server:
         finishes, servers starts to accept new connections again
         """
         client_processes = []
-
+        clients_connected = 0
         try:
-            while self._is_running:
+            while self._is_running and clients_connected < self._number_of_clients:
                 client_socket = self.__accept_new_connection()
                 if client_socket:
                     self._clients_sockets.append(client_socket)
-                    
+                    clients_connected = clients_connected + 1
                     new_process = Process(target=self.__handle_client_connection, args=(client_socket, ))
                     client_processes.append(new_process)
                     new_process.start()
@@ -137,10 +138,14 @@ class Server:
         """
 
         # Connection arrived
-        logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
-        logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        return c
+        try:
+            logging.info('action: accept_connections | result: in_progress')
+            c, addr = self._server_socket.accept()
+            logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+            return c
+        except:
+            logging.info("Server closed")
+            return None
     
     def __shutdown_server(self, signum, frame):
         self._is_running = False    
