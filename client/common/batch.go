@@ -4,12 +4,14 @@ import "strings"
 
 const MAX_MEMORY = 8192
 
+// Batch entity, encapsulates how to serialize many bets
 type Batch struct {
 	bets        []Bet
 	batchSize   int
 	batchMemory int
 }
 
+// Creates a new batch
 func NewBatch(batchSize int) Batch {
 	return Batch{
 		bets:        []Bet{},
@@ -18,10 +20,13 @@ func NewBatch(batchSize int) Batch {
 	}
 }
 
+// Verify if we can append a new bet to the batch,
+// Verifying the number of bets we have and the memory size needed for the bet
 func (batch *Batch) CantAppend(bet Bet) bool {
 	return batch.batchSize-1 < 0 || batch.batchMemory-bet.MemorySize() <= 1
 }
 
+// Append a new bet to the batch if we can
 func (batch *Batch) Append(bet Bet) {
 	if batch.CantAppend(bet) {
 		return
@@ -32,6 +37,8 @@ func (batch *Batch) Append(bet Bet) {
 	batch.batchMemory -= bet.MemorySize()
 }
 
+// Serialize the batch, this means
+// to serialize all the individual bets
 func (batch *Batch) Serialize() string {
 	serialized := ""
 	for _, bet := range batch.bets {
@@ -42,6 +49,7 @@ func (batch *Batch) Serialize() string {
 	return serialized
 }
 
+// Returns if we have 0 bets in this batch
 func (batch *Batch) isEmpty() bool {
 	return len(batch.bets) == 0
 }

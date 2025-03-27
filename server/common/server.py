@@ -19,11 +19,10 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
+        Server loop
 
         Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
+        communication with a client.
         """
         try:
             while self._is_running:
@@ -67,7 +66,10 @@ class Server:
             self._last_client_socket = None
     
     def __get_winners(self, message): 
-        
+        """
+        Get the Winners bets from a Message in the format WINNERS;AGENCY_NUMBER
+        from the bets stored
+        """
         values = message.split(";")
         
         self._completed_agencies.add(values[1])
@@ -85,7 +87,11 @@ class Server:
             logging.info(f"action: not_yet_winner | result: success | the one who asked is agency: {values[1]}")
             return "NOTYET"
 
-    def __get_bets(self, message):   
+    def __get_bets(self, message):
+        """
+        Get the bets Message in the format bet1\nbet2\n...betn
+        returns an array with all the bets and the number of errors found while parsing the bets
+        """   
         errors = 0
         bets = []
         for bet_message in message.split("\n"):
@@ -125,6 +131,9 @@ class Server:
         return c
     
     def __shutdown_server(self, signum, frame):
+        """
+        Gracefully shutdown the server and the client connections
+        """
         self._is_running = False    
         if self._server_socket:
             self._server_socket.close()

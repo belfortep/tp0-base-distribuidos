@@ -52,6 +52,7 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
+// Create a new batch from the lines of the reader file
 func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 	batch := NewBatch(client.config.Batchs)
 
@@ -102,6 +103,7 @@ func (client *Client) createBatch(reader *bufio.Reader) (Batch, error) {
 
 }
 
+// Send a batch to the server and wait for a response
 func (client *Client) sendBatch(batch Batch) error {
 	err := send(client.conn, batch.Serialize())
 
@@ -127,6 +129,7 @@ func (client *Client) sendBatch(batch Batch) error {
 	return nil
 }
 
+// send all batches from the client to the server
 func (client *Client) sendBatches(reader *bufio.Reader) error {
 	for client.is_running {
 		err := client.createClientSocket()
@@ -172,6 +175,9 @@ func (client *Client) sendBatches(reader *bufio.Reader) error {
 	return nil
 }
 
+// Wait to get the winners from the lottery
+// Retry up to MAX_WAITS times, every time
+// waiting an exponential times more
 func (client *Client) waitForWinners() error {
 	times_waited := 1
 	for client.is_running {
@@ -216,7 +222,7 @@ func (client *Client) waitForWinners() error {
 	return nil
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
+// Start the main client loop, sending and receiving
 func (client *Client) StartClientLoop() {
 
 	go client.shutdownClientHandler()
@@ -260,6 +266,7 @@ func (client *Client) StartClientLoop() {
 
 }
 
+// Send the message to ask for the winners to the server
 func (client *Client) getWinners() (Message, error) {
 	err := send(client.conn, fmt.Sprintf("GETWINNERS;%v", client.config.ID))
 
@@ -293,6 +300,7 @@ func (client *Client) createClientSocket() error {
 	return nil
 }
 
+// Gracefully shutdown the client
 func (client *Client) shutdownClientHandler() {
 	<-client.signalChannel
 	close(client.signalChannel)
