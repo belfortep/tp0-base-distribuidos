@@ -8,11 +8,14 @@ const ERR_MESSAGE = "ERR"
 const WINNERS_MESSAGE = "WINNERS"
 const WRONG_MESSAGE = "WRONG"
 
+// Message entity, encapsulates the actions to be taken when receiving different messages
 type Message interface {
 	ActionForClient()
 	MessageType() string
 }
 
+// Creates a new message depending of the string, if it's not in any of the message we use in the protocol
+// We return a MessageWrong type
 func CreateMessage(message string) Message {
 
 	if strings.HasPrefix(message, ACK_MESSAGE) {
