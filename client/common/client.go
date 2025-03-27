@@ -303,7 +303,6 @@ func (client *Client) createClientSocket() error {
 // Gracefully shutdown the client
 func (client *Client) shutdownClientHandler() {
 	<-client.signalChannel
-	close(client.signalChannel)
 	if client.conn != nil {
 		client.conn.Close()
 	}
