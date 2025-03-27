@@ -291,7 +291,7 @@ Se modifico al cliente para que envie multiples apuestas en un formato de batch,
 Si el server recibio el batch correctamente este devuelve `ACK`, si hubo algun error, va a devolver `ERR;CANTIDAD_ERRORES`
 y sigue con la ejecucion, guardando la cantidad de bets que fueron parseadas correctamente.
 
-Para ejecutar y verificar, como en ejercicios anterior, ejecutar `make docker-compose-up` y `docker exec -it id_container_server cat bets.csv` para ver los resultados y `make docker-compose-logs` para ver los logs.
+Para ejecutar y verificar, como en ejercicios anteriores, ejecutar `make docker-compose-up` y `docker exec -it id_container_server cat bets.csv` para ver los resultados y `make docker-compose-logs` para ver los logs.
 
 No se envia ningun mensaje particular para indicar la finalización de envio de apuestas, ya que el cliente siempre conecta y reconecta al enviar
 un batch, por lo que no se queda un recurso tomado indefinidamente.
