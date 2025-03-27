@@ -14,7 +14,6 @@ class Server:
         self._is_running = True
         self._clients_sockets = []
         self._barrier = Barrier(number_of_clients)
-        self._number_of_clients = number_of_clients
         
         
         self._bet_lock = Lock()
@@ -31,13 +30,11 @@ class Server:
         finishes, servers starts to accept new connections again   
         """
         client_processes = []
-        clients_connected = 0
         try:
-            while self._is_running and clients_connected < self._number_of_clients -1:
+            while self._is_running:
                 client_socket = self.__accept_new_connection()
                 if client_socket:
                     self._clients_sockets.append(client_socket)
-                    clients_connected = clients_connected + 1
                     new_process = Process(target=self.__handle_client_connection, args=(client_socket, ))
                     client_processes.append(new_process)
                     new_process.start()
