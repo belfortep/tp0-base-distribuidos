@@ -68,9 +68,8 @@ class Server:
                     is_client_running = False
                 else:
                     bets, errors = self.__get_bets(message)
-                    self._bet_lock.acquire()
-                    store_bets(bets)
-                    self._bet_lock.release()
+                    with self._bet_lock:
+                        store_bets(bets)
                     
                     if errors > 0:
                         logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
