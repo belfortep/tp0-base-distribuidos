@@ -17,7 +17,6 @@ class Server:
         
         
         self._bet_lock = Lock()
-        self._winners_lock = Lock()
 
         signal.signal(signal.SIGTERM, self.__shutdown_server)
 
@@ -91,12 +90,10 @@ class Server:
         
         values = message.split(";")
         message = "WINNERS;"
-        self._winners_lock.acquire()
         for bet in load_bets():
             if has_won(bet):
                 if bet.agency == int(values[1]):
                     message = message + bet.document + ";"
-        self._winners_lock.release()
         message = message[:-1]
         logging.info(f"action: sorteo | result: success")
         return message
@@ -143,7 +140,7 @@ class Server:
         except:
             logging.info("Server closed")
             return None
-    
+            
     def __shutdown_server(self, signum, frame):
         self._is_running = False    
         if self._server_socket:
