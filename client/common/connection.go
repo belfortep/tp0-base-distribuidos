@@ -10,7 +10,7 @@ import (
 // Returns a Message object with the logic depending of the message received
 func readUpToDelimiter(connection net.Conn, delimiter string) (Message, error) {
 
-	buffer := make([]byte, 2)
+	buffer := make([]byte, 1024)
 	var result bytes.Buffer
 	foundDelimiter := false
 	delimiterBytes := []byte(delimiter)
@@ -24,7 +24,6 @@ func readUpToDelimiter(connection net.Conn, delimiter string) (Message, error) {
 			}
 			return nil, err
 		}
-		log.Infof("ACTION: CLIENT READING | result: success")
 
 		result.Write(buffer[:bytesRead])
 
