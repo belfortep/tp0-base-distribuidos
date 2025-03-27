@@ -46,7 +46,7 @@ class Server:
             
             if errors > 0:
                 logging.error(f"action: apuesta_recibida | result: fail  | cantidad: {errors}")
-                send(self._last_client_socket, f"ERR {errors}")
+                send(self._last_client_socket, f"ERR;{errors}")
             else:
                 logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                 send(self._last_client_socket, "ACK")
@@ -99,10 +99,14 @@ class Server:
         """
 
         # Connection arrived
-        logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
-        logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        return c
+        try:
+            logging.info('action: accept_connections | result: in_progress')
+            c, addr = self._server_socket.accept()
+            logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+            return c
+        except:
+            logging.info("Server closed")
+            return None
     
     def __shutdown_server(self, signum, frame):
         """
