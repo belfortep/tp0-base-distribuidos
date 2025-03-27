@@ -178,3 +178,38 @@ Se espera que se redacte una sección del README en donde se indique cómo ejecu
 Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/tp0-tests) de caja negra. Se exige que la resolución de los ejercicios pase tales pruebas, o en su defecto que las discrepancias sean justificadas y discutidas con los docentes antes del día de la entrega. El incumplimiento de las pruebas es condición de desaprobación, pero su cumplimiento no es suficiente para la aprobación. Respetar las entradas de log planteadas en los ejercicios, pues son las que se chequean en cada uno de los tests.
 
 La corrección personal tendrá en cuenta la calidad del código entregado y casos de error posibles, se manifiesten o no durante la ejecución del trabajo práctico. Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+# Informe
+
+## Parte 1
+
+### Ejercicio 1
+
+Se implemento el script `generar-compose.sh`, el cual genera un archivo de docker-compose con la cantidad de clientes especificados por parametro al igual que el
+nombre del archivo de salida. Para ejecutar se debe correr:
+```bash
+./generar-compose.sh <output_file> <number_of_clients>
+```
+
+Notar que si el nombre es distinto a `docker-compose-dev.yaml`, el `Makefile` no funcionara ya que espera un archivo con ese nombre.
+Ademas, si no se envian la cantidad de parametros correctos, o la cantidad de clientes se utiliza texto en vez de un numero, se devolvera un error
+
+### Ejercicio 2
+
+En este nuevo ejercicio, se modifico el archivo de `compose_generator.py`, el cual genera el docker-compose, para que se agreguen los archivos
+de configuración tanto del cliente `config.yaml` como del servidor `config.ini` como volumenes, esto permitiendo que se puedan modificar sin
+tener que reconstruir la imagen. Para verificar que son volumenes como se espera, se pueden ejecutar los containers con `make docker-compose-up`, buscar
+el id del container con `docker ps` y ejecutar `docker exec -it id_de_container cat archivo_configuracion`, modificar desde afuera el archivo, volver
+a ejecutar el `cat` en el container y ver que estan los cambios persistidos
+
+### Ejercicio 3
+
+Se agrego el script `validar-echo-server.sh`, el cual verifica que se envia un mensaje y se espera que se reciba el mismo utilizando `netcat`,
+el modo de ejecución es:
+
+```bash
+./validar-echo-server.sh
+```
+
+Notar que se asume el nombre del container como `server` y que el puerto es `12345`, siendo los mismos valores que se utilizan cuando se genera el
+archivo de docker-compose con el script de `generar-compose.sh`
