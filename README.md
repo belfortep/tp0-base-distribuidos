@@ -227,7 +227,7 @@ en la primer terminal que no tiene los logs, ejecutar `docker-compose-down` la c
 En este nuevo apartado, se empieza a cambiar de gran manera tanto el cliente como el servidor, agregando nuevos mensajes un poco mas interesantes que 
 los de un echo server. Ahora, explicare los mensajes que se empezaron a utilizar en esta parte y como es que se envian y reciben.
 
-El protocolo implementando es uno de texto, esto se decidio ya que permitia un facil debugeo de la aplicación, ademas de ser sencillo de implementar
+El protocolo implementando es uno de texto, esto se decidio ya que permitia un facil debugeo de la aplicación, ademas de ser sencillo de implementar.
 Este protocolo, esta basado en delimitadores, por lo que al poder recibir los datos a traves de un `socket`, se va a leer del socket todo lo que se pueda
 hasta encontrar un delimitador, en particular se utilizo `\0`, simplemente por el hecho que es similar a como el lenguaje C maneja el fin de los strings.
 
