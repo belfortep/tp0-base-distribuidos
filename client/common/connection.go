@@ -24,7 +24,7 @@ func readUpToDelimiter(connection net.Conn, delimiter string) (Message, error) {
 			}
 			return nil, err
 		}
-		log.Infof("ACTION: READING | result: success")
+		log.Infof("ACTION: CLIENT READING | result: success")
 
 		result.Write(buffer[:bytesRead])
 
