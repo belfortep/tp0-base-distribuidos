@@ -22,7 +22,7 @@ def read_up_to_delimiter(connection, delimiter):
         if not chunk:
             raise ConnectionResetError("Socket is closed in reading")
         buffer.extend(chunk)
-        logging.info(f"action: SERVER READING | result: success | message {buffer.decode("utf-8")}")
+        logging.info(f"action: SERVER READING | result: success ")
 
         delimiter_index = buffer.find(delimiter)
         if delimiter_index != -1:
