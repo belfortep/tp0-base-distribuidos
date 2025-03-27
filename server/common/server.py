@@ -28,12 +28,12 @@ class Server:
 
         Server that accept a new connections and establishes a
         communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
+        finishes, servers starts to accept new connections again   
         """
         client_processes = []
         clients_connected = 0
         try:
-            while self._is_running and clients_connected < self._number_of_clients:
+            while self._is_running and clients_connected < self._number_of_clients -1:
                 client_socket = self.__accept_new_connection()
                 if client_socket:
                     self._clients_sockets.append(client_socket)
