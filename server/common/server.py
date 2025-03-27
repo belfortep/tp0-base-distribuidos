@@ -22,11 +22,10 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
+        Server loop
 
         Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again   
+        communication with a client. Creates a new process for every new Client
         """
         client_processes = []
         try:
@@ -86,7 +85,10 @@ class Server:
             client_socket.close()
     
     def __get_winners(self, message): 
-        
+        """
+        Get the Winners bets from a Message in the format WINNERS;AGENCY_NUMBER
+        from the bets stored
+        """
         values = message.split(";")
         message = "WINNERS;"
         for bet in load_bets():
@@ -98,6 +100,10 @@ class Server:
         return message
 
     def __get_bets(self, message):   
+        """
+        Get the bets Message in the format bet1\nbet2\n...betn
+        returns an array with all the bets and the number of errors found while parsing the bets
+        """
         errors = 0
         bets = []
         for bet_message in message.split("\n"):
@@ -141,6 +147,9 @@ class Server:
             return None
             
     def __shutdown_server(self, signum, frame):
+        """
+        Gracefully shutdown the server and the client connections
+        """
         self._is_running = False    
         if self._server_socket:
             self._server_socket.close()

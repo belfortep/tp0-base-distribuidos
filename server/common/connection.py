@@ -1,17 +1,23 @@
 def send(connection, message):
+    """
+    Send a message without short-writes with a \0 at the end
+    """
     message = message + "\0"
     
     connection.sendall(message.encode("utf-8"))
 
 
 def read_up_to_delimiter(connection, delimiter):
+    """
+    Read up to the delimiter, this function doesn't have short-reads
+    """
     buffer = bytearray()
     found_delimiter = False
     delimiter = delimiter.encode("utf-8")
     delimiter_index = 0
 
     while not found_delimiter:
-        chunk = connection.recv(1024)
+        chunk = connection.recv(2)
         if not chunk:
             raise ConnectionResetError("Socket is closed in reading")
         buffer.extend(chunk)

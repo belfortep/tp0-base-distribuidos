@@ -8,7 +8,7 @@ import (
 
 func readUpToDelimiter(connection net.Conn, delimiter string) (Message, error) {
 
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 2)
 	var result bytes.Buffer
 	foundDelimiter := false
 	delimiterBytes := []byte(delimiter)
