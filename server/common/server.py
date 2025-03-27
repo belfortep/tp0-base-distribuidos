@@ -29,7 +29,7 @@ class Server:
                 if self._last_client_socket:
                     self.__handle_client_connection()
         except Exception as e:
-            logging.error("action: server_run | result: fail | error: {e}")
+            logging.error(f"action: server_run | result: fail | error: {e}")
         finally:
             self.__shutdown_server(None, None)
             
@@ -46,9 +46,11 @@ class Server:
             store_bets([bet])
             logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
             send(self._last_client_socket, "ACK")
+        except ConnectionResetError as e:
+            logging.info(f"action: server_run | result: success | message: the socket is now closed")
         except OSError as e:
             send(self._last_client_socket, "ERR")
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
             self._last_client_socket.close()
             self._last_client_socket = None
@@ -86,9 +88,13 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
-        logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        return c
+        try:
+            c, addr = self._server_socket.accept()
+            logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+            return c
+        except:
+            logging.info("Server closed")
+            return None
     
     def __shutdown_server(self, signum, frame):
         """
