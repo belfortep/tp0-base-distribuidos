@@ -47,6 +47,7 @@ class Server:
             logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
             send(self._last_client_socket, "ACK")
         except OSError as e:
+            send(self._last_client_socket, "ERR")
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             self._last_client_socket.close()
