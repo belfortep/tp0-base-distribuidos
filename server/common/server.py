@@ -18,11 +18,10 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
+        Server loop
 
         Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
+        communication with a client.
         """
         try:
             while self._is_running:
@@ -54,6 +53,10 @@ class Server:
             self._last_client_socket = None
     
     def __read_bet(self):   
+        """
+        Read and get the bets Message in the format bet1\nbet2\n...betn
+        returns an array with all the bets and the number of errors found while parsing the bets
+        """
         message = read_up_to_delimiter(self._last_client_socket, "\0")
         logging.info(f"action: reading_bet | result: success | message: {message}")
         data_list = message.split(";")
@@ -87,6 +90,9 @@ class Server:
         return c
     
     def __shutdown_server(self, signum, frame):
+        """
+        Gracefully shutdown the server and the client connections
+        """
         self._is_running = False    
         if self._server_socket:
             self._server_socket.close()

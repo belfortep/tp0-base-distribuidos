@@ -45,7 +45,7 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
+// Start the main client loop, sending and receiving
 func (client *Client) StartClientLoop() {
 
 	go client.shutdownClientHandler()
@@ -109,6 +109,7 @@ func (client *Client) createClientSocket() error {
 	return nil
 }
 
+// Gracefully shutdown the client
 func (client *Client) shutdownClientHandler() {
 	<-client.signalChannel
 	close(client.signalChannel)

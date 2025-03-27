@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// Bet entity, encapsulates the serialization of bets logic
 type Bet struct {
 	agency    string
 	name      string
@@ -14,6 +15,7 @@ type Bet struct {
 	number    string
 }
 
+// Get a bet using the env-vars
 func GetBet(agency string) Bet {
 
 	name := os.Getenv("CLI_NOMBRE")
@@ -32,6 +34,7 @@ func GetBet(agency string) Bet {
 	}
 }
 
+// Serialize all the fields of the bet
 func (bet *Bet) serialize() string {
 	return fmt.Sprintf("%s;%s;%s;%s;%s;%s", bet.agency, bet.name, bet.surname, bet.dni, bet.birthdate, bet.number)
 }
